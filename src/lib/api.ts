@@ -25,7 +25,12 @@ export async function updateRow<T extends Record<string, unknown>>(
   id: string,
   patch: Partial<T>
 ): Promise<T> {
-  const { data, error } = await supabase.from(table).update(patch).eq("id", id).select().single();
+  const { data, error } = await supabase
+    .from(table)
+    .update(patch as Record<string, unknown>)
+    .eq("id", id)
+    .select()
+    .single();
   if (error) throw error;
   return data as T;
 }
