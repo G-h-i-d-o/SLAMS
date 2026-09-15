@@ -10,7 +10,6 @@ type Props = {
 };
 
 const PRIORITIES = ["critical", "high", "medium", "low"] as const;
- 
 
 function cap(s: string) {
   return s[0].toUpperCase() + s.slice(1);
