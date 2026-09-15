@@ -562,3 +562,33 @@ tbody tr.row-highlight {
   padding: 2px 8px; border-radius: 5px;
   border: 1px solid #ddd6fe; letter-spacing: .5px;
 }
+/* ---- Tree ---- */
+.tree-caret {
+  display: inline-block;
+  width: 12px;
+  font-size: 10px;
+  color: var(--faint);
+  transition: transform .15s;
+  cursor: pointer;
+  user-select: none;
+}
+.tree-caret.open {
+  transform: rotate(90deg);
+}
+.tree-count {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--faint);
+  font-weight: 700;
+}
+.tree-row-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.tree-row-all:hover { background: #f5f7ff; }

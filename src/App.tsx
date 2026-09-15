@@ -15,7 +15,9 @@ import Services from "./pages/Services";
 import BusinessHours from "./pages/BusinessHours";
 import Clusters from "./pages/Clusters";
 import MttrPresets from "./pages/MttrPresets";
+import ImportHistory from "./pages/ImportHistory";
 import AuditLog from "./pages/AuditLog";
+
 
 export default function App() {
   return (
@@ -39,7 +41,8 @@ export default function App() {
           <Route path="bhours"    element={<BusinessHours />} />
           <Route path="clusters"  element={<Clusters />} />
           <Route path="mttrs"     element={<MttrPresets />} />
-
+          
+          <Route path="import-history" element={<ImportHistory />} />
           <Route path="audit"    element={<AuditLog />} />
 
           <Route path="forbidden" element={<Forbidden />} />

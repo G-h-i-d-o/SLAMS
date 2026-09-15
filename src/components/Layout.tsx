@@ -15,6 +15,7 @@ const META: Record<string, { title: string; sub: string }> = {
   "/bhours":    { title: "Business Hours",         sub: "Working-hour calendars" },
   "/clusters":  { title: "Clusters",               sub: "Customer cluster information" },
   "/mttrs":     { title: "MTTR Presets",           sub: "Response and resolve targets" },
+  "/import-history": { title: "Import History", sub: "Every manual upload and ITSM sync" },
   "/audit":     { title: "Audit Log",              sub: "All significant actions in the system" },
 };
 
