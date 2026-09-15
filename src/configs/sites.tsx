@@ -1,4 +1,5 @@
 import type { ConfigSpec } from "../types/config";
+import { importSpecs } from "../lib/import/specs";
 
 export type Site = {
   id: string;
@@ -47,4 +48,5 @@ export const sitesSpec: ConfigSpec<Site> = {
     },
     { key: "is_enabled", label: "Enabled", type: "checkbox", default: true },
   ],
+  import: importSpecs.sites,
 };

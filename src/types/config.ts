@@ -24,17 +24,43 @@ export type FieldSpec = {
   hint?: string;
   full?: boolean;
   default?: unknown;
-  /** For select fields — returns the list of options given the current lookups. */
   options?: (lookups: Lookups) => { value: string; label: string }[];
-  /** Coerce the raw form value before saving (e.g. empty string → null). */
   transform?: (value: unknown) => unknown;
+};
+
+/* ---- Import types ---- */
+
+export type ImportColumn = {
+  key: string;
+  label: string;
+  required?: boolean;
+  aliases: string[];
+  /**
+   * Optional FK resolver. Called for each cell value.
+   *   - return undefined  → cell is blank; column gets NULL
+   *   - return null       → value not found; row is flagged as error
+   *   - return string     → resolved id
+   */
+  resolve?: (rawValue: string, lookups: Lookups) => string | null | undefined;
+  resolveHint?: string;
+};
+
+export type ImportSpec = {
+  table: string;
+  title: string;
+  columns: ImportColumn[];
+  /** One sample row used when generating the download template. */
+  sample: Record<string, string>;
 };
 
 export type ConfigSpec<T> = {
   table: string;
   title: string;
+  /** Singular form used for buttons like "Add Company". Falls back to title without trailing "s". */
+  singular?: string;
   subtitle: string;
   orderBy: string;
   columns: ColumnSpec<T>[];
   fields: FieldSpec[];
+  import?: ImportSpec;
 };

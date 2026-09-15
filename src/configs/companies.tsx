@@ -1,5 +1,6 @@
 import type { ConfigSpec } from "../types/config";
 import { fmtDate } from "../lib/utils";
+import { importSpecs } from "../lib/import/specs";
 
 export type Company = {
   id: string;
@@ -13,6 +14,7 @@ export type Company = {
 export const companiesSpec: ConfigSpec<Company> = {
   table: "companies",
   title: "Companies",
+  singular: "Company",
   subtitle: "Client organisations under SLA contract",
   orderBy: "name",
   columns: [
@@ -40,4 +42,5 @@ export const companiesSpec: ConfigSpec<Company> = {
     { key: "customer_number", label: "Customer Number", type: "text" },
     { key: "is_enabled", label: "Enabled", type: "checkbox", default: true },
   ],
+  import: importSpecs.companies,
 };

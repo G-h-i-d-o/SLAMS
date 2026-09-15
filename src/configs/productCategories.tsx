@@ -1,4 +1,5 @@
 import type { ConfigSpec } from "../types/config";
+import { importSpecs } from "../lib/import/specs";
 
 export type ProductCategory = {
   id: string;
@@ -14,6 +15,7 @@ export type ProductCategory = {
 export const productCategoriesSpec: ConfigSpec<ProductCategory> = {
   table: "product_categories",
   title: "Product Categories",
+  singular: "Product",
   subtitle: "Product Tier 1 → Tier 2 → Tier 3 → Product Name",
   orderBy: "tier1",
   columns: [
@@ -52,4 +54,5 @@ export const productCategoriesSpec: ConfigSpec<ProductCategory> = {
     },
     { key: "is_enabled", label: "Enabled", type: "checkbox", default: true },
   ],
+  import: importSpecs.products,
 };
