@@ -1,0 +1,1 @@
+-- Local-only fixtures go here. Production seeds live in migrations/.
