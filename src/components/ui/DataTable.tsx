@@ -16,14 +16,24 @@ type Props<T> = {
 };
 
 export default function DataTable<T extends Record<string, unknown>>({
-  columns, rows, rowKey, actions, emptyMessage,
+  columns,
+  rows,
+  rowKey,
+  actions,
+  emptyMessage,
 }: Props<T>) {
   const hasActions = !!actions;
 
   if (!rows.length) {
     return (
       <div className="empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <line x1="9" y1="9" x2="15" y2="15" />
           <line x1="15" y1="9" x2="9" y2="15" />
@@ -39,18 +49,24 @@ export default function DataTable<T extends Record<string, unknown>>({
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c.key} style={c.align === "right" ? { textAlign: "right" } : undefined}>
+              <th
+                key={c.key}
+                style={c.align === "right" ? { textAlign: "right" } : undefined}
+              >
                 {c.label}
               </th>
             ))}
-            {hasActions && <th style={{ textAlign: "right" }}></th>}
+            {hasActions && <th style={{ textAlign: "right" }} />}
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={rowKey(row)}>
+            <tr key={rowKey(row)} data-row-id={rowKey(row)}>
               {columns.map((c) => (
-                <td key={c.key} style={c.align === "right" ? { textAlign: "right" } : undefined}>
+                <td
+                  key={c.key}
+                  style={c.align === "right" ? { textAlign: "right" } : undefined}
+                >
                   {c.render ? c.render(row) : String(row[c.key] ?? "")}
                 </td>
               ))}

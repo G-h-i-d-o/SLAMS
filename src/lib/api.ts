@@ -10,29 +10,33 @@ export async function listRows<T>(table: string, orderBy?: string): Promise<T[]>
 }
 
 /** Insert one row. */
-export async function insertRow<T extends Record<string, unknown>>(
+export async function insertRow(
   table: string,
-  row: T
-): Promise<T> {
-  const { data, error } = await supabase.from(table).insert(row).select().single();
+  row: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const { data, error } = await supabase
+    .from(table)
+    .insert(row)
+    .select()
+    .single();
   if (error) throw error;
-  return data as T;
+  return data as Record<string, unknown>;
 }
 
 /** Update one row by id. */
-export async function updateRow<T extends Record<string, unknown>>(
+export async function updateRow(
   table: string,
   id: string,
-  patch: Partial<T>
-): Promise<T> {
+  patch: Record<string, unknown>
+): Promise<Record<string, unknown>> {
   const { data, error } = await supabase
     .from(table)
-    .update(patch as Record<string, unknown>)
+    .update(patch)
     .eq("id", id)
     .select()
     .single();
   if (error) throw error;
-  return data as T;
+  return data as Record<string, unknown>;
 }
 
 /** Delete one row by id. */
