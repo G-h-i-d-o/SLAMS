@@ -32,6 +32,58 @@ export const importSpecs = {
     sample: { "Company Name": "Northwind Systems", "Customer Number": "9999" },
   } as ImportSpec,
 
+    supportGroupCompanies: {
+    table: "support_group_companies",
+    title: "Support Group Companies",
+    columns: [
+      {
+        key: "name",
+        label: "Support Group Company Name",
+        required: true,
+        aliases: [
+          "name",
+          "support group company",
+          "support group company name",
+          "company",
+          "company name",
+        ],
+      },
+    ],
+    sample: { "Support Group Company Name": "Acme Support Services" },
+  } as ImportSpec,
+
+  supportOrganizations: {
+    table: "support_organizations",
+    title: "Support Organizations",
+    columns: [
+      {
+        key: "name",
+        label: "Support Organization Name",
+        required: true,
+        aliases: ["name", "organization", "support org", "support organization", "org name"],
+      },
+      {
+        key: "support_group_company_id",
+        label: "Support Group Company",
+        required: true,
+        aliases: ["support group company", "company", "parent company"],
+        resolve: (v, l) => {
+          const lower = v.toLowerCase().trim();
+          if (!lower) return undefined;
+          const hit = l.supportGroupCompanies.find(
+            (c) => c.name.toLowerCase() === lower
+          );
+          return hit?.id ?? null;
+        },
+        resolveHint: "Must match an existing Support Group Company name",
+      },
+    ],
+    sample: {
+      "Support Organization Name": "Global Services",
+      "Support Group Company": "Acme Support Services",
+    },
+  } as ImportSpec,
+
   groups: {
     table: "support_groups",
     title: "Support Groups",

@@ -35,7 +35,26 @@ export default function LivePreview({ form, lookups, step }: Props) {
         <div className="pc-rows">
           <div className="pc-row"><span>Customer #</span><span>{form.customer_number || "—"}</span></div>
           <div className="pc-row"><span>Contact</span><span>{form.contact_company || "—"}</span></div>
-          <div className="pc-row"><span>Support Group</span><span>{supportGroup?.name ?? "—"}</span></div>
+          <div className="pc-row">
+            <span>Support Group</span>
+            <span>
+              {(() => {
+                if (!supportGroup) return "—";
+                const org = lookups.supportOrganizations.find(
+                  (o) => o.id === supportGroup.support_organization_id
+                );
+                const sgc = org
+                  ? lookups.supportGroupCompanies.find(
+                      (c) => c.id === org.support_group_company_id
+                    )
+                  : null;
+                const path = [sgc?.name, org?.name, supportGroup.name]
+                  .filter(Boolean)
+                  .join(" › ");
+                return path || supportGroup.name;
+              })()}
+            </span>
+          </div>
           <div className="pc-row"><span>Site</span><span>{site?.name ?? "—"}</span></div>
           <div className="pc-row"><span>Product</span><span>{product?.product_name ?? "—"}</span></div>
           <div className="pc-row"><span>Service</span><span>{service?.component ?? "—"}</span></div>

@@ -36,19 +36,21 @@ const SECTIONS: NavSection[] = [
       { to: "/notifications", label: "Notifications", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg> },
     ],
   },
-  {
+   {
     label: "Configuration",
     items: [
-      { to: "/companies",   label: "Companies",           icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.building}</svg> },
-      { to: "/groups",      label: "Support Groups",      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.users}</svg> },
-      { to: "/sites",       label: "Sites",               icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.pin}</svg> },
-      { to: "/products",    label: "Product Categories",  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.grid}</svg> },
-      { to: "/services",    label: "Services",            icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.layers}</svg> },
-      { to: "/bhours",      label: "Business Hours",      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.clock}</svg> },
-      { to: "/clusters",    label: "Clusters",            icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.hex}</svg> },
-      { to: "/mttrs",       label: "MTTR Presets",        icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.timer}</svg> },
+      { to: "/companies",          label: "Companies",                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.building}</svg> },
+      { to: "/sg-companies",       label: "Support Group Companies",  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.hex}</svg> },
+      { to: "/support-orgs",       label: "Support Organizations",    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.grid}</svg> },
+      { to: "/groups",             label: "Support Groups",           icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.users}</svg> },
+      { to: "/sites",              label: "Sites",                    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.pin}</svg> },
+      { to: "/products",           label: "Product Categories",       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.grid}</svg> },
+      { to: "/services",           label: "Services",                 icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.layers}</svg> },
+      { to: "/bhours",             label: "Business Hours",           icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.clock}</svg> },
+      { to: "/clusters",           label: "Clusters",                 icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.hex}</svg> },
+      { to: "/mttrs",              label: "MTTR Presets",             icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.timer}</svg> },
     ],
-  },
+    },
     {
     label: "Administration",
     items: [

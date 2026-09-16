@@ -21,8 +21,23 @@ export default function Step2Support({ form, update, lookups }: Props) {
           label="Support Group"
           value={form.support_group_id}
           onChange={(v) => update({ support_group_id: v })}
-          options={lookups.supportGroups.map((g) => ({ value: g.id, label: g.name }))}
+          options={lookups.supportGroups.map((g) => {
+            const org = lookups.supportOrganizations.find(
+              (o) => o.id === g.support_organization_id
+            );
+            const sgc = org
+              ? lookups.supportGroupCompanies.find(
+                  (c) => c.id === org.support_group_company_id
+                )
+              : null;
+            const path = [sgc?.name, org?.name].filter(Boolean).join(" › ");
+            return {
+              value: g.id,
+              label: path ? `${path} › ${g.name}` : g.name,
+            };
+          })}
           required
+          full
         />
         <SelectField
           label="Site (optional — exclusive to company)"

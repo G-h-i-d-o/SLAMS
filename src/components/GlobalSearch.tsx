@@ -5,7 +5,7 @@ import { listRows } from "../lib/api";
 import { esc } from "../lib/utils";
 
 type Result = {
-  type: "company" | "group" | "site" | "product" | "service" | "bhours" | "cluster" | "mttr";
+  type: "company" | "sgc" | "supportOrg" | "group" | "site" | "product" | "service" | "bhours" | "cluster" | "mttr";
   id: string;
   title: string;
   sub: string;
@@ -15,6 +15,8 @@ type Result = {
 
 const TYPE_META: Record<Result["type"], { label: string; icon: string; page: string }> = {
   company: { label: "Companies",          icon: "C", page: "/companies" },
+  sgc:        { label: "Support Group Companies", icon: "SC", page: "/sg-companies" },
+  supportOrg: { label: "Support Organizations",   icon: "SO", page: "/support-orgs" },
   group:   { label: "Support Groups",     icon: "G", page: "/groups"    },
   site:    { label: "Sites",              icon: "S", page: "/sites"     },
   product: { label: "Product Categories", icon: "P", page: "/products"  },
@@ -33,6 +35,8 @@ export default function GlobalSearch() {
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const companies = useQuery({ queryKey: ["search", "companies"],   queryFn: () => listRows<any>("companies", "name") });
+  const sgc = useQuery({ queryKey: ["search", "sgcs"], queryFn: () => listRows<any>("support_group_companies", "name") });
+  const orgs = useQuery({ queryKey: ["search", "orgs"], queryFn: () => listRows<any>("support_organizations", "name") });
   const groups    = useQuery({ queryKey: ["search", "groups"],      queryFn: () => listRows<any>("support_groups", "name") });
   const sites     = useQuery({ queryKey: ["search", "sites"],       queryFn: () => listRows<any>("sites", "name") });
   const products  = useQuery({ queryKey: ["search", "products"],    queryFn: () => listRows<any>("product_categories", "tier1") });
@@ -50,6 +54,14 @@ export default function GlobalSearch() {
     (groups.data ?? []).forEach((r) => out.push({
       type: "group", id: r.id, title: r.name, sub: `Support Group`,
       page: "/groups", keywords: [r.name, r.external_id].filter(Boolean),
+    }));
+        (sgc.data ?? []).forEach((r) => out.push({
+      type: "sgc", id: r.id, title: r.name, sub: `Support Group Company`,
+      page: "/sg-companies", keywords: [r.name, r.external_id].filter(Boolean),
+    }));
+    (orgs.data ?? []).forEach((r) => out.push({
+      type: "supportOrg", id: r.id, title: r.name, sub: `Support Organization`,
+      page: "/support-orgs", keywords: [r.name, r.external_id].filter(Boolean),
     }));
     (sites.data ?? []).forEach((r) => out.push({
       type: "site", id: r.id, title: r.name, sub: `Site`,
@@ -79,7 +91,7 @@ export default function GlobalSearch() {
       page: "/mttrs", keywords: [r.name].filter(Boolean),
     }));
     return out;
-  }, [companies.data, groups.data, sites.data, products.data, services.data, bhours.data, clusters.data, mttrs.data]);
+  }, [companies.data, sgc.data, orgs.data, groups.data, sites.data, products.data, services.data, bhours.data, clusters.data, mttrs.data]);
 
   const results = useMemo(() => {
     if (!q || q.length < 1) return [];

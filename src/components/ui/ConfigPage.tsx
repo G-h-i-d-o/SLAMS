@@ -27,8 +27,7 @@ export default function ConfigPage<T extends { id: string }>({ spec }: { spec: C
   const [busy, setBusy] = useState(false);
 
   const rows = data ?? [];
-  const entityLabel = spec.title.replace(/s$/, "");
-
+  const entityLabel = spec.singular ?? spec.title.replace(/s$/, "");
   function openCreate() {
     setEditing(null);
     setFormOpen(true);

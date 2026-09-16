@@ -18,6 +18,8 @@ const META: Record<string, { title: string; sub: string }> = {
   "/import-history": { title: "Import History", sub: "Every manual upload and ITSM sync" },
   "/audit":     { title: "Audit Log",              sub: "All significant actions in the system" },
   "/notifications": { title: "Notifications", sub: "Breach alerts and system activity" },
+  "/sg-companies": { title: "Support Group Companies", sub: "Top tier — independent support companies" },
+  "/support-orgs": { title: "Support Organizations",   sub: "Middle tier — organizational units inside a Support Group Company" },
 };
 
 export default function Layout() {

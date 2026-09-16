@@ -12,7 +12,8 @@ export type SupportGroup = {
 export const supportGroupsSpec: ConfigSpec<SupportGroup> = {
   table: "support_groups",
   title: "Support Groups",
-  subtitle: "Support Company → Support Org → Support Group",
+  singular: "Support Group",
+  subtitle: "Bottom tier — Support Group Company → Support Organization → Support Group",
   orderBy: "name",
   columns: [
     {
@@ -20,11 +21,25 @@ export const supportGroupsSpec: ConfigSpec<SupportGroup> = {
       label: "External ID",
       render: (r) => <span className="cell-id">{r.external_id}</span>,
     },
-    { key: "name", label: "Support Group", render: (r) => <span className="cell-strong">{r.name}</span> },
+    {
+      key: "name",
+      label: "Support Group",
+      render: (r) => <span className="cell-strong">{r.name}</span>,
+    },
     {
       key: "support_organization_id",
-      label: "Support Organization",
-      render: (r, l) => l.supportOrgNameById[r.support_organization_id] ?? <span className="cell-sub">—</span>,
+      label: "Full path",
+      render: (r, l) => {
+        const org = l.supportOrganizations.find((o) => o.id === r.support_organization_id);
+        const sgc = org ? l.supportGroupCompanyNameById[org.support_group_company_id] : null;
+        if (!org) return <span className="cell-sub">—</span>;
+        return (
+          <span className="cell-sub">
+            {sgc ? `${sgc} › ` : ""}
+            {org.name}
+          </span>
+        );
+      },
     },
     {
       key: "is_enabled",
@@ -44,7 +59,15 @@ export const supportGroupsSpec: ConfigSpec<SupportGroup> = {
       label: "Support Organization",
       type: "select",
       required: true,
-      options: (l) => l.supportOrganizations.map((o) => ({ value: o.id, label: o.name })),
+      hint: "Full path shown as: Company › Organization",
+      options: (l) =>
+        l.supportOrganizations.map((o) => {
+          const sgc = l.supportGroupCompanyNameById[o.support_group_company_id];
+          return {
+            value: o.id,
+            label: sgc ? `${sgc} › ${o.name}` : o.name,
+          };
+        }),
     },
     { key: "is_enabled", label: "Enabled", type: "checkbox", default: true },
   ],

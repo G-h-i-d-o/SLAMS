@@ -2,9 +2,11 @@ import type { ReactNode } from "react";
 
 export type Lookups = {
   companies: { id: string; name: string; external_id: string }[];
-  supportOrganizations: { id: string; name: string }[];
+  supportGroupCompanies: { id: string; name: string; external_id: string }[];
+  supportOrganizations: { id: string; name: string; support_group_company_id: string }[];
   companyNameById: Record<string, string>;
   supportOrgNameById: Record<string, string>;
+  supportGroupCompanyNameById: Record<string, string>;
 };
 
 export type ColumnSpec<T> = {

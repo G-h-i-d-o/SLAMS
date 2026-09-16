@@ -17,6 +17,8 @@ import Clusters from "./pages/Clusters";
 import MttrPresets from "./pages/MttrPresets";
 import ImportHistory from "./pages/ImportHistory";
 import Notifications from "./pages/Notifications";
+import SupportGroupCompanies from "./pages/SupportGroupCompanies";
+import SupportOrganizations from "./pages/SupportOrganizations";
 import AuditLog from "./pages/AuditLog";
 
 
@@ -36,6 +38,8 @@ export default function App() {
           <Route path="history"  element={<MetricsHistory />} />
 
           <Route path="companies" element={<Companies />} />
+          <Route path="sg-companies" element={<SupportGroupCompanies />} />
+          <Route path="support-orgs" element={<SupportOrganizations />} />
           <Route path="groups"    element={<SupportGroups />} />
           <Route path="sites"     element={<Sites />} />
           <Route path="products"  element={<ProductCategories />} />
