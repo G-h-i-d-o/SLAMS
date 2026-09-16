@@ -9,6 +9,7 @@ import {
   useDashboardRecent,
   useDashboardStatus,
   useDashboardTrend,
+  useDashboardBreaches,
 } from "../hooks/useDashboard";
 import { useRealtimeMetrics } from "../hooks/useRealtimeMetrics";
 
@@ -28,10 +29,8 @@ export default function Home() {
   const trend = trendQ.data ?? [];
   const recent = recentQ.data ?? [];
 
-  const completePct =
-    kpis && kpis.active_metrics > 0
-      ? Math.round((kpis.fully_configured / kpis.active_metrics) * 100)
-      : 0;
+  const breachQ = useDashboardBreaches();
+  const breaches = breachQ.data;
 
   const greetingName = profile?.full_name?.split(" ")[0] ?? "there";
 
@@ -103,24 +102,25 @@ export default function Home() {
         />
 
         <KpiCard
-          label="MTTR Completeness"
+          label="Breach Rate"
           value={
             <>
-              {completePct}
+              {breaches?.breach_rate_pct ?? "—"}
               <small style={{ fontSize: 14, color: "var(--faint)", fontWeight: 700 }}>%</small>
             </>
           }
           sub={
-            kpis
-              ? `${kpis.fully_configured} of ${kpis.active_metrics} fully configured`
+            breaches
+              ? `${breaches.total_breaches} breaches in ${breaches.total_evaluations} evaluations`
               : ""
           }
-          iconBg="#f5f3ff"
-          iconColor="#8b5cf6"
+          iconBg="#fef2f2"
+          iconColor="#ef4444"
           icon={
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           }
         />
