@@ -16,6 +16,7 @@ import BusinessHours from "./pages/BusinessHours";
 import Clusters from "./pages/Clusters";
 import MttrPresets from "./pages/MttrPresets";
 import ImportHistory from "./pages/ImportHistory";
+import Notifications from "./pages/Notifications";
 import AuditLog from "./pages/AuditLog";
 
 
@@ -31,6 +32,7 @@ export default function App() {
           <Route index element={<Home />} />
 
           <Route path="create"   element={<CreateMetrics />} />
+          <Route path="notifications" element={<Notifications />} />
           <Route path="history"  element={<MetricsHistory />} />
 
           <Route path="companies" element={<Companies />} />
@@ -41,7 +43,7 @@ export default function App() {
           <Route path="bhours"    element={<BusinessHours />} />
           <Route path="clusters"  element={<Clusters />} />
           <Route path="mttrs"     element={<MttrPresets />} />
-          
+
           <Route path="import-history" element={<ImportHistory />} />
           <Route path="audit"    element={<AuditLog />} />
 

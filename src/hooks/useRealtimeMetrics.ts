@@ -11,8 +11,10 @@ export function useRealtimeMetrics() {
   const qc = useQueryClient();
 
   useEffect(() => {
+    const channelName = `metrics-${Math.random().toString(36).slice(2, 10)}`;
+
     const channel = supabase
-      .channel("metrics-changes")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "metrics" },

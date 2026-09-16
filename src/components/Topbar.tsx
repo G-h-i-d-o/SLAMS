@@ -1,5 +1,6 @@
 import GlobalSearch from "./GlobalSearch";
 import { useAuth } from "../contexts/AuthContext";
+import NotificationBell from "./topbar/NotificationBell";
 
 export default function Topbar({
   title, subtitle, onBurger,
@@ -27,6 +28,7 @@ export default function Topbar({
           </svg>
           <span>{isAdmin ? "Admin" : "User"}</span>
         </div>
+        <NotificationBell />
       </div>
     </header>
   );

@@ -17,6 +17,7 @@ const META: Record<string, { title: string; sub: string }> = {
   "/mttrs":     { title: "MTTR Presets",           sub: "Response and resolve targets" },
   "/import-history": { title: "Import History", sub: "Every manual upload and ITSM sync" },
   "/audit":     { title: "Audit Log",              sub: "All significant actions in the system" },
+  "/notifications": { title: "Notifications", sub: "Breach alerts and system activity" },
 };
 
 export default function Layout() {
