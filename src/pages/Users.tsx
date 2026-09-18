@@ -8,11 +8,17 @@ import { useToast } from "../contexts/ToastContext";
 import {
   useAdminUsers,
   useCreateUser,
+  useDeleteUser,
   useToggleUserActive,
   useUpdateUserRole,
   type AdminUserProfile,
 } from "../hooks/useAdminUsers";
 import { fmtDate } from "../lib/utils";
+
+type PendingAction =
+  | { kind: "toggle"; user: AdminUserProfile }
+  | { kind: "delete"; user: AdminUserProfile }
+  | null;
 
 export default function Users() {
   const { user: me } = useAuth();
@@ -21,6 +27,7 @@ export default function Users() {
   const create = useCreateUser();
   const updateRole = useUpdateUserRole();
   const toggleActive = useToggleUserActive();
+  const deleteUser = useDeleteUser();
 
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({
@@ -30,10 +37,10 @@ export default function Users() {
     full_name: "",
     role: "user" as "admin" | "user",
   });
-  const [deactivating, setDeactivating] = useState<AdminUserProfile | null>(null);
+  const [pending, setPending] = useState<PendingAction>(null);
+  const [busy, setBusy] = useState(false);
 
   const rows = (data ?? []).slice().sort((a, b) => {
-    // Admins first, then newest first
     if (a.role !== b.role) return a.role === "admin" ? -1 : 1;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
@@ -94,19 +101,28 @@ export default function Users() {
     }
   }
 
-  async function confirmDeactivate() {
-    if (!deactivating) return;
+  async function confirmPending() {
+    if (!pending) return;
+    setBusy(true);
     try {
-      await toggleActive.mutateAsync({
-        id: deactivating.id,
-        is_active: !deactivating.is_active,
-      });
-      success(
-        `${deactivating.email} ${deactivating.is_active ? "deactivated" : "reactivated"}`
-      );
-      setDeactivating(null);
+      if (pending.kind === "toggle") {
+        const nextState = !pending.user.is_active;
+        await toggleActive.mutateAsync({
+          id: pending.user.id,
+          is_active: nextState,
+        });
+        success(
+          `${pending.user.email} ${nextState ? "reactivated" : "deactivated"}`
+        );
+      } else {
+        await deleteUser.mutateAsync(pending.user.id);
+        success(`${pending.user.email} permanently deleted`);
+      }
+      setPending(null);
     } catch (err) {
-      error(err instanceof Error ? err.message : "Failed to update user");
+      error(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -158,25 +174,47 @@ export default function Users() {
 
   const actions = (row: AdminUserProfile) => {
     const isSelf = row.id === me?.id;
+    if (isSelf) {
+      return <span className="cell-sub">—</span>;
+    }
     return (
       <>
-        {!isSelf && (
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={() =>
+            changeRole(row, row.role === "admin" ? "user" : "admin")
+          }
+          disabled={updateRole.isPending}
+        >
+          Make {row.role === "admin" ? "User" : "Admin"}
+        </button>
+
+        {row.is_active ? (
           <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => changeRole(row, row.role === "admin" ? "user" : "admin")}
-            disabled={updateRole.isPending}
-          >
-            Make {row.role === "admin" ? "User" : "Admin"}
-          </button>
-        )}
-        {!isSelf && (
-          <button
-            className={`btn ${row.is_active ? "btn-danger" : "btn-ghost"} btn-sm`}
-            onClick={() => setDeactivating(row)}
+            className="btn btn-danger btn-sm"
+            onClick={() => setPending({ kind: "toggle", user: row })}
             disabled={toggleActive.isPending}
           >
-            {row.is_active ? "Deactivate" : "Reactivate"}
+            Deactivate
           </button>
+        ) : (
+          <>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setPending({ kind: "toggle", user: row })}
+              disabled={toggleActive.isPending}
+            >
+              Reactivate
+            </button>
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={() => setPending({ kind: "delete", user: row })}
+              disabled={deleteUser.isPending}
+              title="Permanently delete this user"
+            >
+              Delete
+            </button>
+          </>
         )}
       </>
     );
@@ -188,10 +226,15 @@ export default function Users() {
         <div className="card-head">
           <div>
             <h3>Users</h3>
-            <p>{rows.length} user{rows.length === 1 ? "" : "s"} in the system</p>
+            <p>
+              {rows.length} user{rows.length === 1 ? "" : "s"} in the system
+            </p>
           </div>
           <div className="right">
-            <button className="btn btn-primary btn-sm" onClick={() => setAddOpen(true)}>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setAddOpen(true)}
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -264,8 +307,9 @@ export default function Users() {
             lineHeight: 1.55,
           }}
         >
-          The new user will be created immediately with the password you set. Share
-          the credentials with them directly — there's no email confirmation step.
+          The new user will be created immediately with the password you set.
+          Share the credentials with them directly — there's no email
+          confirmation step.
         </div>
 
         <TextField
@@ -320,20 +364,40 @@ export default function Users() {
       </Modal>
 
       <ConfirmDialog
-        open={!!deactivating}
-        title={deactivating?.is_active ? "Deactivate user" : "Reactivate user"}
+        open={!!pending}
+        title={
+          pending?.kind === "delete"
+            ? "Delete user permanently"
+            : pending?.user.is_active
+            ? "Deactivate user"
+            : "Reactivate user"
+        }
         message={
-          deactivating
-            ? deactivating.is_active
-              ? `${deactivating.email} will lose access to create metrics and any UI actions. Their existing sessions stay valid until they sign out — consider this a soft disable.`
-              : `${deactivating.email} will regain full access.`
+          pending
+            ? pending.kind === "delete"
+              ? `Permanently delete ${pending.user.email}? This cannot be undone. ` +
+                `Their auth account and profile row will be removed. ` +
+                `Any audit log entries referencing them will remain, but their ID will no longer resolve.`
+              : pending.user.is_active
+              ? `${pending.user.email} will lose access immediately. ` +
+                `Existing sessions are terminated within a minute, and future sign-ins are blocked. ` +
+                `You can reactivate them any time — or permanently delete them once deactivated.`
+              : `${pending.user.email} will regain full access and be able to sign in again.`
             : ""
         }
-        confirmLabel={deactivating?.is_active ? "Deactivate" : "Reactivate"}
-        danger={deactivating?.is_active}
-        busy={toggleActive.isPending}
-        onCancel={() => setDeactivating(null)}
-        onConfirm={confirmDeactivate}
+        confirmLabel={
+          pending?.kind === "delete"
+            ? "Delete permanently"
+            : pending?.user.is_active
+            ? "Deactivate"
+            : "Reactivate"
+        }
+        danger={
+          pending?.kind === "delete" || !!pending?.user.is_active
+        }
+        busy={busy}
+        onCancel={() => setPending(null)}
+        onConfirm={confirmPending}
       />
     </>
   );

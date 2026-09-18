@@ -3,7 +3,7 @@ import {
   useContext,
   useEffect,
   useState,
-  ReactNode,
+  type ReactNode,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
@@ -33,44 +33,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load profile when session changes
   async function loadProfile(userId: string) {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, email, full_name, role, is_active")
       .eq("id", userId)
       .single();
+
     if (error) {
       console.error("Failed to load profile:", error.message);
       setProfile(null);
       return;
     }
+
+    // If the profile has been deactivated, sign the user out immediately.
+    // The auth-level ban prevents new sign-ins; this handles the case
+    // where a user is deactivated mid-session.
+    if (!data.is_active) {
+      console.warn("Profile inactive — signing out");
+      await supabase.auth.signOut();
+      setProfile(null);
+      return;
+    }
+
     setProfile(data as Profile);
   }
 
   useEffect(() => {
-    // 1. Get initial session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       if (data.session?.user) loadProfile(data.session.user.id);
       setLoading(false);
     });
 
-    // 2. Subscribe to auth changes
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      if (newSession?.user) {
-        loadProfile(newSession.user.id);
-      } else {
-        setProfile(null);
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user) {
+          loadProfile(newSession.user.id);
+        } else {
+          setProfile(null);
+        }
       }
-    });
+    );
 
     return () => sub.subscription.unsubscribe();
   }, []);
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) throw error;
   }
 
@@ -89,7 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
