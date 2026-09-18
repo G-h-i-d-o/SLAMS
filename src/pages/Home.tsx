@@ -5,11 +5,11 @@ import TrendChart from "../components/dashboard/TrendChart";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import { useAuth } from "../contexts/AuthContext";
 import {
+  useDashboardBreaches,
   useDashboardKpis,
   useDashboardRecent,
   useDashboardStatus,
   useDashboardTrend,
-  useDashboardBreaches,
 } from "../hooks/useDashboard";
 import { useRealtimeMetrics } from "../hooks/useRealtimeMetrics";
 
@@ -23,31 +23,35 @@ export default function Home() {
   const statusQ = useDashboardStatus();
   const trendQ = useDashboardTrend();
   const recentQ = useDashboardRecent();
+  const breachQ = useDashboardBreaches();
 
   const kpis = kpisQ.data;
   const status = statusQ.data ?? [];
   const trend = trendQ.data ?? [];
   const recent = recentQ.data ?? [];
-
-  const breachQ = useDashboardBreaches();
   const breaches = breachQ.data;
 
   const greetingName =
     profile?.full_name?.trim().split(" ")[0] ||
     user?.email?.split("@")[0] ||
     "there";
+
+  const roleBlurb = (() => {
+    const role = profile?.role;
+    if (role === "admin")
+      return "You have full access to configure the system and manage users.";
+    if (role === "editor")
+      return "You can view Operations and manage Configuration. User management is Admin-only.";
+    return "You can browse configurations and create metrics.";
+  })();
+
   return (
     <>
-      {/* Hero */}
       <div className="home-hero" style={{ marginBottom: 20 }}>
         <h1>Welcome back, {greetingName}.</h1>
-        <p>
-          Live view of every SLA metric in the system. Changes from other users appear here
-          automatically.
-        </p>
+        <p>{roleBlurb}</p>
       </div>
 
-      {/* KPI row */}
       <div className="grid g-4 mb-16">
         <KpiCard
           label="Active Metrics"
@@ -128,11 +132,7 @@ export default function Home() {
         />
       </div>
 
-      {/* Charts row */}
-      <div
-        className="grid mb-16"
-        style={{ gridTemplateColumns: "1.4fr 1fr" }}
-      >
+      <div className="grid mb-16" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
         <div className="card">
           <div className="card-head">
             <div>
@@ -172,7 +172,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Recent activity */}
       <div className="card">
         <div className="card-head">
           <div>
@@ -180,10 +179,7 @@ export default function Home() {
             <p>Latest metrics by last update time</p>
           </div>
           <div className="right">
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => navigate("/history")}
-            >
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate("/history")}>
               View all
             </button>
           </div>

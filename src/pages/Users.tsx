@@ -12,6 +12,7 @@ import {
   useToggleUserActive,
   useUpdateUserRole,
   type AdminUserProfile,
+  type Role,
 } from "../hooks/useAdminUsers";
 import { fmtDate } from "../lib/utils";
 
@@ -19,6 +20,12 @@ type PendingAction =
   | { kind: "toggle"; user: AdminUserProfile }
   | { kind: "delete"; user: AdminUserProfile }
   | null;
+
+function roleBadge(role: Role) {
+  if (role === "admin") return <span className="badge badge-purple">Admin</span>;
+  if (role === "editor") return <span className="badge badge-info">Editor</span>;
+  return <span className="badge badge-neutral">User</span>;
+}
 
 export default function Users() {
   const { user: me } = useAuth();
@@ -35,13 +42,14 @@ export default function Users() {
     password: "",
     confirm: "",
     full_name: "",
-    role: "user" as "admin" | "user",
+    role: "user" as Role,
   });
   const [pending, setPending] = useState<PendingAction>(null);
   const [busy, setBusy] = useState(false);
 
   const rows = (data ?? []).slice().sort((a, b) => {
-    if (a.role !== b.role) return a.role === "admin" ? -1 : 1;
+    const order: Record<Role, number> = { admin: 0, editor: 1, user: 2 };
+    if (a.role !== b.role) return order[a.role] - order[b.role];
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
@@ -88,11 +96,12 @@ export default function Users() {
     }
   }
 
-  async function changeRole(u: AdminUserProfile, newRole: "admin" | "user") {
+  async function changeRole(u: AdminUserProfile, newRole: Role) {
     if (u.id === me?.id) {
       error("You can't change your own role");
       return;
     }
+    if (u.role === newRole) return;
     try {
       await updateRole.mutateAsync({ id: u.id, role: newRole });
       success(`${u.email} is now ${newRole}`);
@@ -148,12 +157,38 @@ export default function Users() {
     {
       key: "role",
       label: "Role",
-      render: (r) =>
-        r.role === "admin" ? (
-          <span className="badge badge-purple">Admin</span>
-        ) : (
-          <span className="badge badge-neutral">User</span>
-        ),
+      render: (r) => {
+        const isSelf = r.id === me?.id;
+        if (isSelf) return roleBadge(r.role);
+        return (
+          <select
+            value={r.role}
+            onChange={(e) => changeRole(r, e.target.value as Role)}
+            disabled={updateRole.isPending}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              padding: "4px 22px 4px 8px",
+              fontSize: 11.5,
+              fontWeight: 600,
+              borderRadius: 6,
+              border: "1px solid var(--border)",
+              background: "#fff",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              appearance: "none",
+              backgroundImage:
+                "url(\"data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 6px center",
+              backgroundSize: "11px",
+            }}
+          >
+            <option value="user">User</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+          </select>
+        );
+      },
     },
     {
       key: "is_active",
@@ -174,21 +209,10 @@ export default function Users() {
 
   const actions = (row: AdminUserProfile) => {
     const isSelf = row.id === me?.id;
-    if (isSelf) {
-      return <span className="cell-sub">—</span>;
-    }
+    if (isSelf) return <span className="cell-sub">—</span>;
+
     return (
       <>
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={() =>
-            changeRole(row, row.role === "admin" ? "user" : "admin")
-          }
-          disabled={updateRole.isPending}
-        >
-          Make {row.role === "admin" ? "User" : "Admin"}
-        </button>
-
         {row.is_active ? (
           <button
             className="btn btn-danger btn-sm"
@@ -353,13 +377,14 @@ export default function Users() {
         <SelectField
           label="Role"
           value={form.role}
-          onChange={(v) => setForm({ ...form, role: v as "admin" | "user" })}
+          onChange={(v) => setForm({ ...form, role: v as Role })}
           options={[
-            { value: "user", label: "Standard User" },
-            { value: "admin", label: "Administrator" },
+            { value: "user", label: "Standard User — Operations only" },
+            { value: "editor", label: "Editor — Operations + Configuration" },
+            { value: "admin", label: "Administrator — Full access" },
           ]}
           required
-          hint="Users can read all data and create metrics. Admins have full access."
+          hint="Admin > Editor > User. Only Admins can manage other users."
         />
       </Modal>
 
@@ -392,9 +417,7 @@ export default function Users() {
             ? "Deactivate"
             : "Reactivate"
         }
-        danger={
-          pending?.kind === "delete" || !!pending?.user.is_active
-        }
+        danger={pending?.kind === "delete" || !!pending?.user.is_active}
         busy={busy}
         onCancel={() => setPending(null)}
         onConfirm={confirmPending}

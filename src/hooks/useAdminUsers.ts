@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { listRows } from "../lib/api";
 
+export type Role = "admin" | "editor" | "user";
+
 export type AdminUserProfile = {
   id: string;
   email: string;
   full_name: string | null;
-  role: "admin" | "user";
+  role: Role;
   is_active: boolean;
   created_at: string;
 };
@@ -20,9 +22,6 @@ export function useAdminUsers() {
   });
 }
 
-/* -------------------------------------------------------------------- */
-/*  Helper: call a Netlify Function with the current session's JWT     */
-/* -------------------------------------------------------------------- */
 async function callAdminFunction(
   path: string,
   body: Record<string, unknown>
@@ -67,14 +66,11 @@ async function callAdminFunction(
   return data;
 }
 
-/* -------------------------------------------------------------------- */
-/*  Create user                                                        */
-/* -------------------------------------------------------------------- */
 export type CreateUserInput = {
   email: string;
   password: string;
   full_name: string;
-  role: "admin" | "user";
+  role: Role;
 };
 
 export function useCreateUser() {
@@ -91,19 +87,10 @@ export function useCreateUser() {
   });
 }
 
-/* -------------------------------------------------------------------- */
-/*  Update role (direct profile update — RLS allows admins)             */
-/* -------------------------------------------------------------------- */
 export function useUpdateUserRole() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      id,
-      role,
-    }: {
-      id: string;
-      role: "admin" | "user";
-    }) => {
+    mutationFn: async ({ id, role }: { id: string; role: Role }) => {
       const { error } = await supabase
         .from("profiles")
         .update({ role })
@@ -114,9 +101,6 @@ export function useUpdateUserRole() {
   });
 }
 
-/* -------------------------------------------------------------------- */
-/*  Toggle active (via Netlify Function — bans/unbans at auth layer)    */
-/* -------------------------------------------------------------------- */
 export function useToggleUserActive() {
   const qc = useQueryClient();
   return useMutation({
@@ -129,9 +113,6 @@ export function useToggleUserActive() {
   });
 }
 
-/* -------------------------------------------------------------------- */
-/*  Delete user permanently (only allowed if already deactivated)       */
-/* -------------------------------------------------------------------- */
 export function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({

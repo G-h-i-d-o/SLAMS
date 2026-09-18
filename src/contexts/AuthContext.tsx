@@ -8,11 +8,13 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
+export type Role = "admin" | "editor" | "user";
+
 export type Profile = {
   id: string;
   email: string;
   full_name: string | null;
-  role: "admin" | "user";
+  role: Role;
   is_active: boolean;
 };
 
@@ -20,7 +22,10 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  /** True only for role = 'admin' */
   isAdmin: boolean;
+  /** True for admin OR editor — anyone who can write configuration */
+  isEditor: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -46,9 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // If the profile has been deactivated, sign the user out immediately.
-    // The auth-level ban prevents new sign-ins; this handles the case
-    // where a user is deactivated mid-session.
     if (!data.is_active) {
       console.warn("Profile inactive — signing out");
       await supabase.auth.signOut();
@@ -98,6 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     profile,
     isAdmin: profile?.role === "admin" && profile?.is_active !== false,
+    isEditor:
+      (profile?.role === "admin" || profile?.role === "editor") &&
+      profile?.is_active !== false,
     loading,
     signIn,
     signOut,

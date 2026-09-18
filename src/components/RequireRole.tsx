@@ -1,12 +1,17 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-export default function RequireRole({ role }: { role: "admin" | "user" }) {
-  const { isAdmin, loading } = useAuth();
+type Props = { role: "admin" | "editor" };
+
+export default function RequireRole({ role }: Props) {
+  const { isAdmin, isEditor, loading } = useAuth();
 
   if (loading) return null;
 
   if (role === "admin" && !isAdmin) {
+    return <Navigate to="/forbidden" replace />;
+  }
+  if (role === "editor" && !isEditor) {
     return <Navigate to="/forbidden" replace />;
   }
 

@@ -10,11 +10,18 @@ import { useLookups } from "../../contexts/LookupsContext";
 import { useTable, useMutateTable } from "../../hooks/useTable";
 import type { ConfigSpec } from "../../types/config";
 
-export default function ConfigPage<T extends { id: string }>({ spec }: { spec: ConfigSpec<T> }) {
-  const { isAdmin } = useAuth();
+export default function ConfigPage<T extends { id: string }>({
+  spec,
+}: {
+  spec: ConfigSpec<T>;
+}) {
+  const { isEditor } = useAuth();
   const { success, error } = useToast();
   const lookups = useLookups();
-  const { data, isLoading, error: loadError, refetch } = useTable<T>(spec.table, spec.orderBy);
+  const { data, isLoading, error: loadError, refetch } = useTable<T>(
+    spec.table,
+    spec.orderBy
+  );
   const mut = useMutateTable<T>(spec.table);
 
   const [params] = useSearchParams();
@@ -28,6 +35,7 @@ export default function ConfigPage<T extends { id: string }>({ spec }: { spec: C
 
   const rows = data ?? [];
   const entityLabel = spec.singular ?? spec.title.replace(/s$/, "");
+
   function openCreate() {
     setEditing(null);
     setFormOpen(true);
@@ -65,13 +73,16 @@ export default function ConfigPage<T extends { id: string }>({ spec }: { spec: C
         : renderDefault((row as Record<string, unknown>)[c.key]),
   }));
 
-  const actions = isAdmin
+  const actions = isEditor
     ? (row: T) => (
         <>
           <button className="btn btn-ghost btn-sm" onClick={() => openEdit(row)}>
             Edit
           </button>
-          <button className="btn btn-danger btn-sm" onClick={() => setDeleting(row)}>
+          <button
+            className="btn btn-danger btn-sm"
+            onClick={() => setDeleting(row)}
+          >
             Delete
           </button>
         </>
@@ -87,7 +98,7 @@ export default function ConfigPage<T extends { id: string }>({ spec }: { spec: C
             <p>{spec.subtitle}</p>
           </div>
           <div className="right">
-            {isAdmin ? (
+            {isEditor ? (
               <>
                 {spec.import && (
                   <button
@@ -123,7 +134,7 @@ export default function ConfigPage<T extends { id: string }>({ spec }: { spec: C
                 </button>
               </>
             ) : (
-              <span className="badge badge-neutral">Read-only · Admin only</span>
+              <span className="badge badge-neutral">Read-only · Admin or Editor</span>
             )}
           </div>
         </div>
@@ -171,7 +182,9 @@ export default function ConfigPage<T extends { id: string }>({ spec }: { spec: C
         <ImportModal
           open={importOpen}
           onClose={() => setImportOpen(false)}
-          onImported={() => { refetch(); }}
+          onImported={() => {
+            refetch();
+          }}
           spec={spec.import}
         />
       )}

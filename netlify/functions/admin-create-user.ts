@@ -1,11 +1,13 @@
 import type { Handler } from "@netlify/functions";
 import { getSupabaseAdmin } from "./_shared/supabaseAdmin";
 
+type Role = "admin" | "editor" | "user";
+
 type CreateUserBody = {
   email?: string;
   password?: string;
   full_name?: string;
-  role?: "admin" | "user";
+  role?: Role;
 };
 
 export const handler: Handler = async (event) => {
@@ -20,7 +22,6 @@ export const handler: Handler = async (event) => {
 };
 
 async function handle(event: Parameters<Handler>[0]) {
-  // ---- 1. Get Supabase client (catches missing env vars) ----
   let supabaseAdmin;
   try {
     supabaseAdmin = getSupabaseAdmin();
@@ -30,23 +31,18 @@ async function handle(event: Parameters<Handler>[0]) {
     });
   }
 
-  // ---- 2. Only POST ----
   if (event.httpMethod !== "POST") {
     return json(405, { error: "Method not allowed" });
   }
 
-  // ---- 3. Extract the caller's JWT ----
   const authHeader =
     event.headers.authorization ?? event.headers.Authorization ?? "";
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
     : "";
 
-  if (!token) {
-    return json(401, { error: "Missing authorization token" });
-  }
+  if (!token) return json(401, { error: "Missing authorization token" });
 
-  // ---- 4. Verify the token and get the caller ----
   const { data: userData, error: userErr } =
     await supabaseAdmin.auth.getUser(token);
 
@@ -56,7 +52,6 @@ async function handle(event: Parameters<Handler>[0]) {
     });
   }
 
-  // ---- 5. Confirm the caller is an active admin ----
   const { data: callerProfile, error: profileErr } = await supabaseAdmin
     .from("profiles")
     .select("role, is_active")
@@ -70,7 +65,6 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(403, { error: "Admin access required" });
   }
 
-  // ---- 6. Parse and validate the body ----
   let body: CreateUserBody;
   try {
     body = JSON.parse(event.body ?? "{}");
@@ -81,7 +75,13 @@ async function handle(event: Parameters<Handler>[0]) {
   const email = String(body.email ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
   const fullName = String(body.full_name ?? "").trim();
-  const role: "admin" | "user" = body.role === "admin" ? "admin" : "user";
+
+  const role: Role =
+    body.role === "admin"
+      ? "admin"
+      : body.role === "editor"
+      ? "editor"
+      : "user";
 
   if (!email || !email.includes("@")) {
     return json(400, { error: "A valid email is required" });
@@ -90,7 +90,6 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(400, { error: "Password must be at least 8 characters" });
   }
 
-  // ---- 7. Create the auth user ----
   const { data: created, error: createErr } =
     await supabaseAdmin.auth.admin.createUser({
       email,
@@ -107,7 +106,6 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(500, { error: "User was created but no record was returned" });
   }
 
-  // ---- 8. Set role + full_name on the profile row ----
   const { error: updateErr } = await supabaseAdmin
     .from("profiles")
     .update({ role, full_name: fullName || null })
