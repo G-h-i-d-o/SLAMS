@@ -1,6 +1,6 @@
 import type { MetricWizardForm } from "../../../types/metrics";
 import type { WizardLookups } from "../../../hooks/useWizardLookups";
-import { SelectField } from "../../ui/FormField";
+import SearchableSelect from "../../ui/SearchableSelect";
 
 type Props = {
   form: MetricWizardForm;
@@ -39,18 +39,18 @@ export default function Step3Product({ form, update, lookups }: Props) {
     <>
       <div className="section-title">Product & Service</div>
       <div className="form-grid">
-        <SelectField
-          label="Product"
+        <SearchableSelect
+          label="Product (optional)"
           value={form.product_category_id}
           onChange={(v) => update({ product_category_id: v })}
           options={products.map((p) => ({
             value: p.id,
             label: `${p.tier1} › ${p.tier2 ?? ""} › ${p.tier3 ?? ""} › ${p.product_name}`,
           }))}
-          required
           full
+          placeholder="— None (optional) —"
         />
-        <SelectField
+        <SearchableSelect
           label="Service Category"
           value={form.service_category}
           onChange={(v) =>
@@ -63,16 +63,14 @@ export default function Step3Product({ form, update, lookups }: Props) {
           options={categories.map((c) => ({ value: c, label: c }))}
           required
         />
-        <SelectField
+        <SearchableSelect
           label="Service Sub Category"
           value={form.service_sub_category}
-          onChange={(v) =>
-            update({ service_sub_category: v, service_id: "" })
-          }
+          onChange={(v) => update({ service_sub_category: v, service_id: "" })}
           options={subCategories.map((s) => ({ value: s, label: s }))}
           required
         />
-        <SelectField
+        <SearchableSelect
           label="Service Component"
           value={form.service_id}
           onChange={(v) => update({ service_id: v })}

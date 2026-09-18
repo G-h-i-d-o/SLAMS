@@ -1,6 +1,7 @@
 import type { MetricWizardForm, MttrMode } from "../../../types/metrics";
 import type { WizardLookups } from "../../../hooks/useWizardLookups";
-import { FormField, SelectField } from "../../ui/FormField";
+import { FormField } from "../../ui/FormField";
+import SearchableSelect from "../../ui/SearchableSelect";
 
 type Props = {
   form: MetricWizardForm;
@@ -22,7 +23,12 @@ function modeLabel(m: MttrMode): string {
   return "Not set";
 }
 
-export default function Step4Terms({ form, update, lookups, onOpenMttrModal }: Props) {
+export default function Step4Terms({
+  form,
+  update,
+  lookups,
+  onOpenMttrModal,
+}: Props) {
   const bhs = lookups.businessHours.filter((b) => b.is_enabled);
   const showRespond = form.mttr_mode === "respond" || form.mttr_mode === "both";
   const showResolve = form.mttr_mode === "resolve" || form.mttr_mode === "both";
@@ -62,7 +68,7 @@ export default function Step4Terms({ form, update, lookups, onOpenMttrModal }: P
             onChange={(e) => update({ rollup_performance: e.target.value })}
           />
         </FormField>
-        <SelectField
+        <SearchableSelect
           label="Tiered / Configured / Non Catalogued"
           value={form.tiered_type}
           onChange={(v) =>
@@ -82,11 +88,13 @@ export default function Step4Terms({ form, update, lookups, onOpenMttrModal }: P
       </div>
       <div className="form-grid">
         {PRIORITIES.map((p) => (
-          <SelectField
+          <SearchableSelect
             key={p}
             label={`Business Hours — ${cap(p)}`}
             value={(form[`bh_${p}` as keyof MetricWizardForm] as string) ?? ""}
-            onChange={(v) => update({ [`bh_${p}`]: v } as Partial<MetricWizardForm>)}
+            onChange={(v) =>
+              update({ [`bh_${p}`]: v } as Partial<MetricWizardForm>)
+            }
             options={bhs.map((b) => ({ value: b.id, label: b.label }))}
             required
           />
@@ -100,7 +108,11 @@ export default function Step4Terms({ form, update, lookups, onOpenMttrModal }: P
       <div className="mttr-summary-bar">
         <span className="label">MTTR mode:</span>
         <span className="value">{modeLabel(form.mttr_mode)}</span>
-        <button className="btn btn-ghost btn-sm" type="button" onClick={onOpenMttrModal}>
+        <button
+          className="btn btn-ghost btn-sm"
+          type="button"
+          onClick={onOpenMttrModal}
+        >
           {form.mttr_mode ? "Change" : "Configure"}
         </button>
       </div>
@@ -108,18 +120,16 @@ export default function Step4Terms({ form, update, lookups, onOpenMttrModal }: P
       {form.mttr_mode && (
         <>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 600, color: "#334155", display: "block", marginBottom: 5 }}>
-              Start from preset (optional)
-            </label>
-            <select
+            <SearchableSelect
+              label="Start from preset (optional)"
               value={form.mttr_preset_id}
-              onChange={(e) => applyPreset(e.target.value)}
-            >
-              <option value="">— None (manual) —</option>
-              {lookups.mttrPresets.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+              onChange={applyPreset}
+              options={lookups.mttrPresets.map((p) => ({
+                value: p.id,
+                label: p.name,
+              }))}
+              placeholder="— None (manual) —"
+            />
           </div>
 
           <div className="form-grid">
@@ -139,7 +149,11 @@ export default function Step4Terms({ form, update, lookups, onOpenMttrModal }: P
 
             {showResolve &&
               PRIORITIES.map((p) => (
-                <FormField key={`res-${p}`} label={`MTTresolve ${cap(p)} (number or TD)`} required>
+                <FormField
+                  key={`res-${p}`}
+                  label={`MTTresolve ${cap(p)} (number or TD)`}
+                  required
+                >
                   <input
                     type="text"
                     value={form[`mtt_resolve_${p}` as keyof MetricWizardForm] as string}
@@ -166,7 +180,12 @@ export default function Step4Terms({ form, update, lookups, onOpenMttrModal }: P
           }}
         >
           <strong>MTTR not configured yet.</strong>{" "}
-          <button className="btn btn-primary btn-sm" type="button" onClick={onOpenMttrModal} style={{ marginLeft: 8 }}>
+          <button
+            className="btn btn-primary btn-sm"
+            type="button"
+            onClick={onOpenMttrModal}
+            style={{ marginLeft: 8 }}
+          >
             Configure MTTRs
           </button>
         </div>

@@ -1,9 +1,7 @@
 import type { Handler } from "@netlify/functions";
 import { getSupabaseAdmin } from "./_shared/supabaseAdmin";
 
-type Body = {
-  user_id?: string;
-};
+type Body = { user_id?: string };
 
 export const handler: Handler = async (event) => {
   try {
@@ -24,9 +22,7 @@ async function handle(event: Parameters<Handler>[0]) {
     });
   }
 
-  if (event.httpMethod !== "POST") {
-    return json(405, { error: "Method not allowed" });
-  }
+  if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
 
   const authHeader =
     event.headers.authorization ?? event.headers.Authorization ?? "";
@@ -40,7 +36,7 @@ async function handle(event: Parameters<Handler>[0]) {
 
   const { data: caller } = await db
     .from("profiles")
-    .select("role, is_active")
+    .select("role, is_active, email")
     .eq("id", userData.user.id)
     .single();
 
@@ -61,10 +57,10 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(400, { error: "You cannot delete your own account" });
   }
 
-  // ---- Safety: only delete users that have already been deactivated ----
+  // ---- Fetch target for safety check + audit entry ----
   const { data: target, error: targetErr } = await db
     .from("profiles")
-    .select("is_active")
+    .select("email, full_name, role, is_active")
     .eq("id", targetId)
     .single();
 
@@ -75,7 +71,24 @@ async function handle(event: Parameters<Handler>[0]) {
     });
   }
 
-  // ---- Delete the auth user. The FK cascade removes the profile row. ----
+  // ---- 1. Write the audit entry BEFORE deleting the user ----
+  // We do this now because after deletion, the FK from audit_log.user_id
+  // would set to null and we'd lose the actor's identity on that row.
+  const { error: auditErr } = await db.from("audit_log").insert({
+    user_id: userData.user.id,
+    user_email: caller.email ?? userData.user.email ?? null,
+    table_name: "profiles",
+    record_id: targetId,
+    action: "user-deleted",
+    new_data: {
+      target_email: target.email,
+      target_name: target.full_name,
+      target_role: target.role,
+    },
+  });
+  if (auditErr) console.warn("[admin-delete-user] audit log failed:", auditErr.message);
+
+  // ---- 2. Delete the auth user. FK cascade removes the profile row. ----
   const { error: delErr } = await db.auth.admin.deleteUser(targetId);
   if (delErr) return json(400, { error: delErr.message });
 

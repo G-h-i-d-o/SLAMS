@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import type { MetricWizardForm } from "../../../types/metrics";
 import type { WizardLookups } from "../../../hooks/useWizardLookups";
-import { FormField, SelectField, TextField } from "../../ui/FormField";
+import { FormField, TextField } from "../../ui/FormField";
+import SearchableSelect from "../../ui/SearchableSelect";
 
 type Props = {
   form: MetricWizardForm;
@@ -10,7 +11,6 @@ type Props = {
 };
 
 export default function Step1Company({ form, update, lookups }: Props) {
-  // Auto-fill contact_company if empty when a company is selected
   useEffect(() => {
     if (form.company_id && !form.contact_company) {
       const c = lookups.companies.find((x) => x.id === form.company_id);
@@ -25,7 +25,7 @@ export default function Step1Company({ form, update, lookups }: Props) {
       company_id: id,
       customer_number: c?.customer_number ?? "",
       contact_company: c?.name ?? "",
-      site_id: "", // sites are scoped by company
+      site_id: "",
     });
   }
 
@@ -33,13 +33,14 @@ export default function Step1Company({ form, update, lookups }: Props) {
     <>
       <div className="section-title">Company & Document</div>
       <div className="form-grid">
-        <SelectField
+        <SearchableSelect
           label="Company"
           value={form.company_id}
           onChange={onCompanyChange}
           options={lookups.companies.map((c) => ({ value: c.id, label: c.name }))}
           required
           full
+          placeholder="— Select company —"
         />
         <TextField
           label="Customer Number"

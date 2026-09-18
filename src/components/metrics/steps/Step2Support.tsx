@@ -1,6 +1,7 @@
 import type { MetricWizardForm } from "../../../types/metrics";
 import type { WizardLookups } from "../../../hooks/useWizardLookups";
-import { FormField, SelectField } from "../../ui/FormField";
+import { FormField } from "../../ui/FormField";
+import SearchableSelect from "../../ui/SearchableSelect";
 
 type Props = {
   form: MetricWizardForm;
@@ -17,7 +18,7 @@ export default function Step2Support({ form, update, lookups }: Props) {
     <>
       <div className="section-title">Support & Site</div>
       <div className="form-grid">
-        <SelectField
+        <SearchableSelect
           label="Support Group"
           value={form.support_group_id}
           onChange={(v) => update({ support_group_id: v })}
@@ -39,11 +40,12 @@ export default function Step2Support({ form, update, lookups }: Props) {
           required
           full
         />
-        <SelectField
+        <SearchableSelect
           label="Site (optional — exclusive to company)"
           value={form.site_id}
           onChange={(v) => update({ site_id: v })}
           options={sites.map((s) => ({ value: s.id, label: s.name }))}
+          placeholder="— None —"
         />
         <FormField label="Start Date" required>
           <input

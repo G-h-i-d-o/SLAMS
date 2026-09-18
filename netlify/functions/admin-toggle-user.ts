@@ -1,10 +1,7 @@
 import type { Handler } from "@netlify/functions";
 import { getSupabaseAdmin } from "./_shared/supabaseAdmin";
 
-type Body = {
-  user_id?: string;
-  is_active?: boolean;
-};
+type Body = { user_id?: string; is_active?: boolean };
 
 export const handler: Handler = async (event) => {
   try {
@@ -25,9 +22,7 @@ async function handle(event: Parameters<Handler>[0]) {
     });
   }
 
-  if (event.httpMethod !== "POST") {
-    return json(405, { error: "Method not allowed" });
-  }
+  if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
 
   const authHeader =
     event.headers.authorization ?? event.headers.Authorization ?? "";
@@ -41,7 +36,7 @@ async function handle(event: Parameters<Handler>[0]) {
 
   const { data: caller } = await db
     .from("profiles")
-    .select("role, is_active")
+    .select("role, is_active, email")
     .eq("id", userData.user.id)
     .single();
 
@@ -64,6 +59,15 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(400, { error: "You cannot change your own active status" });
   }
 
+  // ---- Fetch the target's current state for the audit entry ----
+  const { data: target } = await db
+    .from("profiles")
+    .select("email, full_name, role, is_active")
+    .eq("id", targetId)
+    .single();
+
+  if (!target) return json(404, { error: "User not found" });
+
   // ---- 1. Update the profile flag ----
   const { error: profileErr } = await db
     .from("profiles")
@@ -73,20 +77,31 @@ async function handle(event: Parameters<Handler>[0]) {
   if (profileErr) return json(400, { error: profileErr.message });
 
   // ---- 2. Ban / unban at the auth layer ----
-  // When deactivated: ban for ~100 years. Supabase blocks new sign-ins
-  // and stops refreshing the session.
-  // When reactivated: clear the ban.
   const { error: banErr } = await db.auth.admin.updateUserById(targetId, {
     ban_duration: isActive ? "none" : "876000h",
   });
 
   if (banErr) {
     console.warn("[admin-toggle-user] ban update failed:", banErr.message);
-    return json(200, {
-      ok: true,
-      warning: `Profile updated but auth ban step failed: ${banErr.message}`,
-    });
   }
+
+  // ---- 3. Write an explicit audit entry ----
+  const action = isActive ? "user-reactivated" : "user-deactivated";
+  const { error: auditErr } = await db.from("audit_log").insert({
+    user_id: userData.user.id,
+    user_email: caller.email ?? userData.user.email ?? null,
+    table_name: "profiles",
+    record_id: targetId,
+    action,
+    old_data: { is_active: target.is_active },
+    new_data: {
+      target_email: target.email,
+      target_name: target.full_name,
+      target_role: target.role,
+      is_active: isActive,
+    },
+  });
+  if (auditErr) console.warn("[admin-toggle-user] audit log failed:", auditErr.message);
 
   return json(200, { ok: true });
 }

@@ -31,7 +31,6 @@ function validateStep(step: number, f: MetricWizardForm): string | null {
     if (!f.end_date) return "End Date is required";
   }
   if (step === 3) {
-    if (!f.product_category_id) return "Please select a product";
     if (!f.service_category) return "Please select a service category";
     if (!f.service_sub_category) return "Please select a service sub category";
     if (!f.service_id) return "Please select a service component";

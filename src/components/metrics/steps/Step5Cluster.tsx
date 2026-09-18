@@ -1,6 +1,7 @@
 import type { MetricWizardForm, MetricAction } from "../../../types/metrics";
 import type { WizardLookups } from "../../../hooks/useWizardLookups";
-import { SelectField, TextField } from "../../ui/FormField";
+import { TextField } from "../../ui/FormField";
+import SearchableSelect from "../../ui/SearchableSelect";
 
 type Props = {
   form: MetricWizardForm;
@@ -19,7 +20,7 @@ export default function Step5Cluster({ form, update, lookups }: Props) {
     <>
       <div className="section-title">Cluster & Action</div>
       <div className="form-grid">
-        <SelectField
+        <SearchableSelect
           label="Cluster"
           value={form.cluster_id}
           onChange={(v) => update({ cluster_id: v })}
@@ -32,7 +33,9 @@ export default function Step5Cluster({ form, update, lookups }: Props) {
           onChange={(v) => update({ vendor_group: v })}
         />
         <div className="field full">
-          <label>Action <span className="req">*</span></label>
+          <label>
+            Action <span className="req">*</span>
+          </label>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {ACTIONS.map((a) => (
               <button
@@ -42,7 +45,10 @@ export default function Step5Cluster({ form, update, lookups }: Props) {
                 style={{
                   background: form.action === a ? "var(--primary)" : "#fff",
                   color: form.action === a ? "#fff" : "var(--text)",
-                  border: form.action === a ? "1px solid var(--primary)" : "1px solid var(--border)",
+                  border:
+                    form.action === a
+                      ? "1px solid var(--primary)"
+                      : "1px solid var(--border)",
                 }}
                 onClick={() => update({ action: a })}
               >
