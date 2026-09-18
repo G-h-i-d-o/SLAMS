@@ -5,27 +5,24 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  AWS_LAMBDA_JS_RUNTIME = "nodejs22.x"
   NPM_FLAGS = "--legacy-peer-deps"
 
 [functions]
   node_bundler = "esbuild"
-  # Netlify reads this env to pick the runtime for your function container.
-  # Node 22 has native WebSocket, matching what @supabase/supabase-js wants.
-  [functions.environment]
-    NODE_VERSION = "22"
 
 [[redirects]]
   from = "/*"
-  to   = "/index.html"
+  to = "/index.html"
   status = 200
 
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options           = "DENY"
-    X-Content-Type-Options    = "nosniff"
-    Referrer-Policy           = "strict-origin-when-cross-origin"
-    Permissions-Policy        = "camera=(), microphone=(), geolocation=()"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
 [[headers]]
   for = "/assets/*"

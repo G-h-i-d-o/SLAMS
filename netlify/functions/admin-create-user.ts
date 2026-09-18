@@ -1,5 +1,5 @@
 import type { Handler } from "@netlify/functions";
-import { supabaseAdmin } from "./_shared/supabaseAdmin";
+import { getSupabaseAdmin } from "./_shared/supabaseAdmin";
 
 type CreateUserBody = {
   email?: string;
@@ -20,11 +20,22 @@ export const handler: Handler = async (event) => {
 };
 
 async function handle(event: Parameters<Handler>[0]) {
+  // ---- 1. Get Supabase client (catches missing env vars) ----
+  let supabaseAdmin;
+  try {
+    supabaseAdmin = getSupabaseAdmin();
+  } catch (err) {
+    return json(500, {
+      error: err instanceof Error ? err.message : "Supabase client unavailable",
+    });
+  }
+
+  // ---- 2. Only POST ----
   if (event.httpMethod !== "POST") {
     return json(405, { error: "Method not allowed" });
   }
 
-  // ---- 1. Extract token ----
+  // ---- 3. Extract the caller's JWT ----
   const authHeader =
     event.headers.authorization ?? event.headers.Authorization ?? "";
   const token = authHeader.startsWith("Bearer ")
@@ -35,8 +46,7 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(401, { error: "Missing authorization token" });
   }
 
-  // ---- 2. Verify the token and get the caller ----
-  // NOTE: the correct method is auth.getUser(jwt), NOT admin.getUser
+  // ---- 4. Verify the token and get the caller ----
   const { data: userData, error: userErr } =
     await supabaseAdmin.auth.getUser(token);
 
@@ -46,7 +56,7 @@ async function handle(event: Parameters<Handler>[0]) {
     });
   }
 
-  // ---- 3. Confirm the caller is an active admin ----
+  // ---- 5. Confirm the caller is an active admin ----
   const { data: callerProfile, error: profileErr } = await supabaseAdmin
     .from("profiles")
     .select("role, is_active")
@@ -60,7 +70,7 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(403, { error: "Admin access required" });
   }
 
-  // ---- 4. Parse and validate the body ----
+  // ---- 6. Parse and validate the body ----
   let body: CreateUserBody;
   try {
     body = JSON.parse(event.body ?? "{}");
@@ -80,7 +90,7 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(400, { error: "Password must be at least 8 characters" });
   }
 
-  // ---- 5. Create the auth user ----
+  // ---- 7. Create the auth user ----
   const { data: created, error: createErr } =
     await supabaseAdmin.auth.admin.createUser({
       email,
@@ -97,7 +107,7 @@ async function handle(event: Parameters<Handler>[0]) {
     return json(500, { error: "User was created but no record was returned" });
   }
 
-  // ---- 6. Set role + full_name on the profile row ----
+  // ---- 8. Set role + full_name on the profile row ----
   const { error: updateErr } = await supabaseAdmin
     .from("profiles")
     .update({ role, full_name: fullName || null })
@@ -105,7 +115,6 @@ async function handle(event: Parameters<Handler>[0]) {
 
   if (updateErr) {
     console.error("[admin-create-user] profile update failed:", updateErr);
-    // Not fatal — the user exists. Return success with a warning.
     return json(200, {
       ok: true,
       user_id: created.user.id,

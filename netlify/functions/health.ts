@@ -1,18 +1,44 @@
 import type { Handler } from "@netlify/functions";
-import { supabaseAdmin } from "./_shared/supabaseAdmin";
+import { getSupabaseAdmin } from "./_shared/supabaseAdmin";
 
 export const handler: Handler = async () => {
-  const { count, error } = await supabaseAdmin
-    .from("companies")
-    .select("*", { count: "exact", head: true });
+  try {
+    const db = getSupabaseAdmin();
 
-  return {
-    statusCode: error ? 500 : 200,
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      ok: !error,
-      companies: count ?? 0,
-      ts: new Date().toISOString(),
-    }),
-  };
+    const { count, error } = await db
+      .from("companies")
+      .select("*", { count: "exact", head: true });
+
+    if (error) {
+      return {
+        statusCode: 500,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ok: false,
+          error: error.message,
+          ts: new Date().toISOString(),
+        }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ok: true,
+        companies: count ?? 0,
+        ts: new Date().toISOString(),
+      }),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ok: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+        ts: new Date().toISOString(),
+      }),
+    };
+  }
 };

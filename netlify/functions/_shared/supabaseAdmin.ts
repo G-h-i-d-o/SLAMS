@@ -1,5 +1,16 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import WebSocket from "ws";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+// ---------------------------------------------------------------------------
+// Supabase's realtime client (initialised inside createClient()) expects a
+// global WebSocket. Netlify Functions run Node < 22 where it doesn't exist.
+// We don't use realtime server-side, but the constructor still checks for it,
+// so we polyfill the global before any createClient() call.
+// ---------------------------------------------------------------------------
+const g = globalThis as { WebSocket?: unknown };
+if (typeof g.WebSocket === "undefined") {
+  g.WebSocket = WebSocket;
+}
 
 let _client: SupabaseClient | null = null;
 
@@ -7,11 +18,8 @@ let _client: SupabaseClient | null = null;
  * Lazily construct the service-role Supabase client.
  * Bypasses RLS — NEVER import this into frontend code.
  *
- * We pass `ws` as the realtime transport so the constructor doesn't
- * crash on Netlify Functions (which run Node < 22 without a native
- * WebSocket global). We don't use realtime here, but Supabase's
- * SupabaseClient constructor initialises a RealtimeClient regardless,
- * so it needs a valid WebSocket implementation to even instantiate.
+ * Created on first access so missing env vars surface inside the handler
+ * where they can be caught and returned as a readable JSON error.
  */
 export function getSupabaseAdmin(): SupabaseClient {
   if (_client) return _client;
@@ -27,10 +35,6 @@ export function getSupabaseAdmin(): SupabaseClient {
 
   _client = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-    realtime: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transport: WebSocket as any,
-    },
   });
   return _client;
 }
