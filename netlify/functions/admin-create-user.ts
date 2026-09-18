@@ -9,48 +9,61 @@ type CreateUserBody = {
 };
 
 export const handler: Handler = async (event) => {
+  try {
+    return await handle(event);
+  } catch (err) {
+    console.error("[admin-create-user] Unhandled error:", err);
+    return json(500, {
+      error: err instanceof Error ? err.message : "Internal server error",
+    });
+  }
+};
+
+async function handle(event: Parameters<Handler>[0]) {
   if (event.httpMethod !== "POST") {
     return json(405, { error: "Method not allowed" });
   }
 
-  // ---- 1. Extract and verify the caller's JWT ----
+  // ---- 1. Extract token ----
   const authHeader =
-    event.headers.authorization || event.headers.Authorization || "";
+    event.headers.authorization ?? event.headers.Authorization ?? "";
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
-    : null;
+    : "";
 
   if (!token) {
     return json(401, { error: "Missing authorization token" });
   }
 
-  const { data: callerData, error: callerErr } =
+  // ---- 2. Verify the token and get the caller ----
+  // NOTE: the correct method is auth.getUser(jwt), NOT admin.getUser
+  const { data: userData, error: userErr } =
     await supabaseAdmin.auth.getUser(token);
 
-  if (callerErr || !callerData.user) {
-    return json(401, { error: "Invalid or expired token" });
+  if (userErr || !userData?.user) {
+    return json(401, {
+      error: `Invalid or expired session: ${userErr?.message ?? "unknown"}`,
+    });
   }
 
-  // ---- 2. Confirm the caller is an active admin ----
+  // ---- 3. Confirm the caller is an active admin ----
   const { data: callerProfile, error: profileErr } = await supabaseAdmin
     .from("profiles")
     .select("role, is_active")
-    .eq("id", callerData.user.id)
+    .eq("id", userData.user.id)
     .single();
 
-  if (
-    profileErr ||
-    !callerProfile ||
-    callerProfile.role !== "admin" ||
-    !callerProfile.is_active
-  ) {
+  if (profileErr || !callerProfile) {
+    return json(403, { error: "Caller profile not found" });
+  }
+  if (callerProfile.role !== "admin" || !callerProfile.is_active) {
     return json(403, { error: "Admin access required" });
   }
 
-  // ---- 3. Validate input ----
+  // ---- 4. Parse and validate the body ----
   let body: CreateUserBody;
   try {
-    body = JSON.parse(event.body || "{}");
+    body = JSON.parse(event.body ?? "{}");
   } catch {
     return json(400, { error: "Invalid JSON body" });
   }
@@ -67,7 +80,7 @@ export const handler: Handler = async (event) => {
     return json(400, { error: "Password must be at least 8 characters" });
   }
 
-  // ---- 4. Create the auth user ----
+  // ---- 5. Create the auth user ----
   const { data: created, error: createErr } =
     await supabaseAdmin.auth.admin.createUser({
       email,
@@ -77,24 +90,22 @@ export const handler: Handler = async (event) => {
     });
 
   if (createErr) {
+    console.error("[admin-create-user] createUser failed:", createErr);
     return json(400, { error: createErr.message });
   }
-
-  if (!created.user) {
+  if (!created?.user) {
     return json(500, { error: "User was created but no record was returned" });
   }
 
-  // ---- 5. Set role + full_name on the profile ----
-  // (the trigger creates the row with role='user'; we may need to elevate)
+  // ---- 6. Set role + full_name on the profile row ----
   const { error: updateErr } = await supabaseAdmin
     .from("profiles")
-    .update({
-      role,
-      full_name: fullName || null,
-    })
+    .update({ role, full_name: fullName || null })
     .eq("id", created.user.id);
 
   if (updateErr) {
+    console.error("[admin-create-user] profile update failed:", updateErr);
+    // Not fatal — the user exists. Return success with a warning.
     return json(200, {
       ok: true,
       user_id: created.user.id,
@@ -103,7 +114,7 @@ export const handler: Handler = async (event) => {
   }
 
   return json(200, { ok: true, user_id: created.user.id });
-};
+}
 
 function json(statusCode: number, payload: unknown) {
   return {

@@ -30,8 +30,7 @@ export type CreateUserInput = {
 export function useCreateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: CreateUserInput) => {
-      // Get the current session's access token
+        mutationFn: async (input: CreateUserInput) => {
       const { data: sessionData, error: sessionErr } =
         await supabase.auth.getSession();
       if (sessionErr || !sessionData.session) {
@@ -47,10 +46,34 @@ export function useCreateUser() {
         body: JSON.stringify(input),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const text = await res.text().catch(() => "");
 
       if (!res.ok) {
-        throw new Error(data?.error ?? `Request failed (${res.status})`);
+        let errMsg = `Server error (${res.status})`;
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed?.error) errMsg = parsed.error;
+        } catch {
+          // Response wasn't JSON — likely a Netlify platform page
+          if (text.length < 200) errMsg = text || errMsg;
+          errMsg += " · Check Netlify → Functions → admin-create-user → Logs";
+        }
+        throw new Error(errMsg);
+      }
+
+      let data: { ok?: boolean; user_id?: string; warning?: string } = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Response wasn't JSON but status was 2xx — unusual but possible
+        throw new Error("Server returned a non-JSON success response");
+      }
+
+      if (!data.ok) {
+        throw new Error(data.warning ?? "User was not created");
+      }
+      if (data.warning) {
+        console.warn("[useCreateUser]", data.warning);
       }
       return data;
     },

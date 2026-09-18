@@ -4,8 +4,15 @@
   functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
   NPM_FLAGS = "--legacy-peer-deps"
+
+[functions]
+  node_bundler = "esbuild"
+  # Netlify reads this env to pick the runtime for your function container.
+  # Node 22 has native WebSocket, matching what @supabase/supabase-js wants.
+  [functions.environment]
+    NODE_VERSION = "22"
 
 [[redirects]]
   from = "/*"
