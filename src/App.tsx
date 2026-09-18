@@ -20,6 +20,7 @@ import Notifications from "./pages/Notifications";
 import SupportGroupCompanies from "./pages/SupportGroupCompanies";
 import SupportOrganizations from "./pages/SupportOrganizations";
 import AuditLog from "./pages/AuditLog";
+import Users from "./pages/Users";
 
 
 export default function App() {
@@ -50,6 +51,7 @@ export default function App() {
 
           <Route path="import-history" element={<ImportHistory />} />
           <Route path="audit"    element={<AuditLog />} />
+          <Route path="users" element={<Users />} />
 
           <Route path="forbidden" element={<Forbidden />} />
           <Route path="*"         element={<NotFound />} />

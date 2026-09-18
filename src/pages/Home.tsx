@@ -14,7 +14,7 @@ import {
 import { useRealtimeMetrics } from "../hooks/useRealtimeMetrics";
 
 export default function Home() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const navigate = useNavigate();
 
   useRealtimeMetrics();
@@ -32,8 +32,10 @@ export default function Home() {
   const breachQ = useDashboardBreaches();
   const breaches = breachQ.data;
 
-  const greetingName = profile?.full_name?.split(" ")[0] ?? "there";
-
+  const greetingName =
+    profile?.full_name?.trim().split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "there";
   return (
     <>
       {/* Hero */}

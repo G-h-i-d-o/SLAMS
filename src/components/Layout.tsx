@@ -20,6 +20,7 @@ const META: Record<string, { title: string; sub: string }> = {
   "/notifications": { title: "Notifications", sub: "Breach alerts and system activity" },
   "/sg-companies": { title: "Support Group Companies", sub: "Top tier — independent support companies" },
   "/support-orgs": { title: "Support Organizations",   sub: "Middle tier — organizational units inside a Support Group Company" },
+  "/users": { title: "Users", sub: "Manage user accounts and roles" },
 };
 
 export default function Layout() {
