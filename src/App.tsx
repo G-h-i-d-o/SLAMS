@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import RequireAuth from "./components/RequireAuth";
+import RequireRole from "./components/RequireRole";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -16,13 +17,11 @@ import BusinessHours from "./pages/BusinessHours";
 import Clusters from "./pages/Clusters";
 import MttrPresets from "./pages/MttrPresets";
 import ImportHistory from "./pages/ImportHistory";
+import AuditLog from "./pages/AuditLog";
 import Notifications from "./pages/Notifications";
+import Users from "./pages/Users";
 import SupportGroupCompanies from "./pages/SupportGroupCompanies";
 import SupportOrganizations from "./pages/SupportOrganizations";
-import AuditLog from "./pages/AuditLog";
-import Users from "./pages/Users";
-import RequireRole from "./components/RequireRole";
-
 
 export default function App() {
   return (
@@ -33,31 +32,35 @@ export default function App() {
       {/* Authenticated */}
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
+          {/* Operations — visible to everyone */}
           <Route index element={<Home />} />
-
-          <Route path="create"   element={<CreateMetrics />} />
+          <Route path="create" element={<CreateMetrics />} />
+          <Route path="history" element={<MetricsHistory />} />
           <Route path="notifications" element={<Notifications />} />
-          <Route path="history"  element={<MetricsHistory />} />
 
-          <Route path="companies" element={<Companies />} />
-          <Route path="sg-companies" element={<SupportGroupCompanies />} />
-          <Route path="support-orgs" element={<SupportOrganizations />} />
-          <Route path="groups"    element={<SupportGroups />} />
-          <Route path="sites"     element={<Sites />} />
-          <Route path="products"  element={<ProductCategories />} />
-          <Route path="services"  element={<Services />} />
-          <Route path="bhours"    element={<BusinessHours />} />
-          <Route path="clusters"  element={<Clusters />} />
-          <Route path="mttrs"     element={<MttrPresets />} />
+          {/* Configuration — Admin or Editor only */}
+          <Route element={<RequireRole role="editor" />}>
+            <Route path="companies" element={<Companies />} />
+            <Route path="sg-companies" element={<SupportGroupCompanies />} />
+            <Route path="support-orgs" element={<SupportOrganizations />} />
+            <Route path="groups" element={<SupportGroups />} />
+            <Route path="sites" element={<Sites />} />
+            <Route path="products" element={<ProductCategories />} />
+            <Route path="services" element={<Services />} />
+            <Route path="bhours" element={<BusinessHours />} />
+            <Route path="clusters" element={<Clusters />} />
+            <Route path="mttrs" element={<MttrPresets />} />
+          </Route>
 
-          <Route path="import-history" element={<ImportHistory />} />
-          <Route path="audit"    element={<AuditLog />} />
+          {/* Administration — Admin only */}
           <Route element={<RequireRole role="admin" />}>
             <Route path="users" element={<Users />} />
+            <Route path="import-history" element={<ImportHistory />} />
+            <Route path="audit" element={<AuditLog />} />
           </Route>
 
           <Route path="forbidden" element={<Forbidden />} />
-          <Route path="*"         element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
     </Routes>

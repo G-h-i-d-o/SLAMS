@@ -16,6 +16,31 @@ type Props<T extends { id: string }> = {
   row: T | null;
 };
 
+/**
+ * Translate Postgres error messages into human-friendly text.
+ */
+function friendlyDbError(msg: string, entityLabel: string): string {
+  const lower = msg.toLowerCase();
+
+  if (
+    lower.includes("duplicate key") ||
+    lower.includes("unique constraint") ||
+    lower.includes("unique index")
+  ) {
+    return `A ${entityLabel.toLowerCase()} with these details already exists. Use different values.`;
+  }
+  if (lower.includes("row-level security") || lower.includes("permission denied")) {
+    return "You don't have permission to make this change.";
+  }
+  if (lower.includes("violates foreign key")) {
+    return "This record is referenced by other data and can't be changed this way.";
+  }
+  if (lower.includes("violates not-null")) {
+    return "A required field is missing.";
+  }
+  return msg;
+}
+
 export default function ConfigFormModal<T extends { id: string }>({
   open,
   onClose,
@@ -32,7 +57,6 @@ export default function ConfigFormModal<T extends { id: string }>({
   const [form, setForm] = useState<Record<string, unknown>>({});
   const [busy, setBusy] = useState(false);
 
-  // Reset form whenever modal opens or row changes
   useEffect(() => {
     if (!open) return;
     const init: Record<string, unknown> = {};
@@ -51,7 +75,6 @@ export default function ConfigFormModal<T extends { id: string }>({
   }
 
   async function submit() {
-    // Required check
     for (const f of fields) {
       if (!f.required) continue;
       const v = form[f.key];
@@ -61,7 +84,6 @@ export default function ConfigFormModal<T extends { id: string }>({
       }
     }
 
-    // Build payload with per-field transform
     const payload: Record<string, unknown> = {};
     for (const f of fields) {
       let v = form[f.key];
@@ -81,7 +103,7 @@ export default function ConfigFormModal<T extends { id: string }>({
       onSaved();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Save failed";
-      error(msg);
+      error(friendlyDbError(msg, entityLabel));
     } finally {
       setBusy(false);
     }
@@ -133,8 +155,8 @@ export default function ConfigFormModal<T extends { id: string }>({
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <div>
-            A unique <strong>External ID</strong> will be assigned automatically by the system
-            and cannot be changed.
+            A unique <strong>External ID</strong> will be assigned automatically
+            by the system. Duplicate names are rejected.
           </div>
         </div>
       )}
