@@ -26,19 +26,17 @@ import SupportOrganizations from "./pages/SupportOrganizations";
 export default function App() {
   return (
     <Routes>
-      {/* Public */}
       <Route path="/login" element={<Login />} />
 
-      {/* Authenticated */}
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
-          {/* Operations — visible to everyone */}
+          {/* Operations — everyone */}
           <Route index element={<Home />} />
           <Route path="create" element={<CreateMetrics />} />
           <Route path="history" element={<MetricsHistory />} />
           <Route path="notifications" element={<Notifications />} />
 
-          {/* Configuration — Admin or Editor only */}
+          {/* Configuration — Admin or Editor */}
           <Route element={<RequireRole role="editor" />}>
             <Route path="companies" element={<Companies />} />
             <Route path="sg-companies" element={<SupportGroupCompanies />} />

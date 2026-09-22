@@ -22,9 +22,7 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
-  /** True only for role = 'admin' */
   isAdmin: boolean;
-  /** True for admin OR editor — anyone who can write configuration */
   isEditor: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -95,14 +93,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }
 
+  const role = profile?.role;
+  const isActive = profile?.is_active !== false;
+
   const value: AuthContextValue = {
     session,
     user: session?.user ?? null,
     profile,
-    isAdmin: profile?.role === "admin" && profile?.is_active !== false,
-    isEditor:
-      (profile?.role === "admin" || profile?.role === "editor") &&
-      profile?.is_active !== false,
+    isAdmin: role === "admin" && isActive,
+    isEditor: (role === "admin" || role === "editor") && isActive,
     loading,
     signIn,
     signOut,

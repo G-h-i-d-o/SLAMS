@@ -89,171 +89,35 @@ const SECTIONS: NavSection[] = [
   {
     label: "Operations",
     items: [
-      {
-        to: "/",
-        label: "Home (Dashboard)",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.home}
-          </svg>
-        ),
-      },
-      {
-        to: "/create",
-        label: "Create Metrics",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.plus}
-          </svg>
-        ),
-      },
-      {
-        to: "/history",
-        label: "Metrics History",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.clock}
-          </svg>
-        ),
-      },
-      {
-        to: "/notifications",
-        label: "Notifications",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.bell}
-          </svg>
-        ),
-      },
+      { to: "/",              label: "Home (Dashboard)", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.home}</svg> },
+      { to: "/create",        label: "Create Metrics",   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.plus}</svg> },
+      { to: "/history",       label: "Metrics History",  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.clock}</svg> },
+      { to: "/notifications", label: "Notifications",    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.bell}</svg> },
     ],
   },
   {
     label: "Configuration",
     requiresEditor: true,
     items: [
-      {
-        to: "/companies",
-        label: "Companies",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.building}
-          </svg>
-        ),
-      },
-      {
-        to: "/sg-companies",
-        label: "Support Group Companies",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.hex}
-          </svg>
-        ),
-      },
-      {
-        to: "/support-orgs",
-        label: "Support Organizations",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.grid}
-          </svg>
-        ),
-      },
-      {
-        to: "/groups",
-        label: "Support Groups",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.users}
-          </svg>
-        ),
-      },
-      {
-        to: "/sites",
-        label: "Sites",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.pin}
-          </svg>
-        ),
-      },
-      {
-        to: "/products",
-        label: "Product Categories",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.grid}
-          </svg>
-        ),
-      },
-      {
-        to: "/services",
-        label: "Services",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.layers}
-          </svg>
-        ),
-      },
-      {
-        to: "/bhours",
-        label: "Business Hours",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.clock}
-          </svg>
-        ),
-      },
-      {
-        to: "/clusters",
-        label: "Clusters",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.hex}
-          </svg>
-        ),
-      },
-      {
-        to: "/mttrs",
-        label: "MTTR Presets",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.timer}
-          </svg>
-        ),
-      },
+      { to: "/companies",    label: "Companies",               icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.building}</svg> },
+      { to: "/sg-companies", label: "Support Group Companies", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.hex}</svg> },
+      { to: "/support-orgs", label: "Support Organizations",   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.grid}</svg> },
+      { to: "/groups",       label: "Support Groups",          icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.users}</svg> },
+      { to: "/sites",        label: "Sites",                   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.pin}</svg> },
+      { to: "/products",     label: "Product Categories",      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.grid}</svg> },
+      { to: "/services",     label: "Services",                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.layers}</svg> },
+      { to: "/bhours",       label: "Business Hours",          icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.clock}</svg> },
+      { to: "/clusters",     label: "Clusters",                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.hex}</svg> },
+      { to: "/mttrs",        label: "MTTR Presets",            icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.timer}</svg> },
     ],
   },
   {
     label: "Administration",
     requiresAdmin: true,
     items: [
-      {
-        to: "/users",
-        label: "Users",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.users}
-          </svg>
-        ),
-      },
-      {
-        to: "/import-history",
-        label: "Import History",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.download}
-          </svg>
-        ),
-      },
-      {
-        to: "/audit",
-        label: "Audit Log",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-            {icon.shield}
-          </svg>
-        ),
-      },
+      { to: "/users",          label: "Users",          icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.users}</svg> },
+      { to: "/import-history", label: "Import History", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.download}</svg> },
+      { to: "/audit",          label: "Audit Log",      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.shield}</svg> },
     ],
   },
 ];
@@ -272,7 +136,6 @@ export default function Sidebar({
   onClose: () => void;
 }) {
   const { profile, user, isAdmin, isEditor, signOut } = useAuth();
-
   const displayName = profile?.full_name || user?.email || "…";
 
   return (
@@ -330,24 +193,10 @@ export default function Sidebar({
           <button
             onClick={signOut}
             title="Sign out"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#64748b",
-            }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}
             aria-label="Sign out"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
