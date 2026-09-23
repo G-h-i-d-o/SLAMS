@@ -17,3 +17,7 @@ coverage/
 *.deb
 *.rpm
 *.AppImage
+
+# Local backups
+/backups/
+*.sql.gz
