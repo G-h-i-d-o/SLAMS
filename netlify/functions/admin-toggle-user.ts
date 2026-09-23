@@ -1,5 +1,6 @@
 import type { Handler } from "@netlify/functions";
 import { getSupabaseAdmin } from "./_shared/supabaseAdmin";
+import { checkRateLimit, getClientIp } from "./_shared/rateLimit";
 
 type Body = { user_id?: string; is_active?: boolean };
 
@@ -29,6 +30,10 @@ async function handle(event: Parameters<Handler>[0]) {
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
     : "";
+    // ---- Rate limit: 60 toggles per hour per IP ----
+  const ip = getClientIp(event.headers as Record<string, string | undefined>);
+  const rl = checkRateLimit(`toggle-user:${ip}`, 60, 60 * 60 * 1000);
+  if (rl) return rl;
   if (!token) return json(401, { error: "Missing token" });
 
   const { data: userData, error: userErr } = await db.auth.getUser(token);

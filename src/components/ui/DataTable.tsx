@@ -72,7 +72,9 @@ export default function DataTable<T extends Record<string, unknown>>({
               ))}
               {hasActions && (
                 <td>
-                  <div className="row-actions">{actions(row)}</div>
+                  <div className="row-actions" role="group" aria-label="Row actions">
+                    {actions(row)}
+                  </div>
                 </td>
               )}
             </tr>

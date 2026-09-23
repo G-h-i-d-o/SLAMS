@@ -1,27 +1,38 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import RequireAuth from "./components/RequireAuth";
 import RequireRole from "./components/RequireRole";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
-import NotFound from "./pages/NotFound";
-import Forbidden from "./pages/Forbidden";
-import CreateMetrics from "./pages/CreateMetrics";
-import MetricsHistory from "./pages/MetricsHistory";
-import Companies from "./pages/Companies";
-import SupportGroups from "./pages/SupportGroups";
-import Sites from "./pages/Sites";
-import ProductCategories from "./pages/ProductCategories";
-import Services from "./pages/Services";
-import BusinessHours from "./pages/BusinessHours";
-import Clusters from "./pages/Clusters";
-import MttrPresets from "./pages/MttrPresets";
-import ImportHistory from "./pages/ImportHistory";
-import AuditLog from "./pages/AuditLog";
-import Notifications from "./pages/Notifications";
-import Users from "./pages/Users";
-import SupportGroupCompanies from "./pages/SupportGroupCompanies";
-import SupportOrganizations from "./pages/SupportOrganizations";
+
+// Lazy-load everything except Login and Home so the initial bundle is small
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Forbidden = lazy(() => import("./pages/Forbidden"));
+const CreateMetrics = lazy(() => import("./pages/CreateMetrics"));
+const MetricsHistory = lazy(() => import("./pages/MetricsHistory"));
+const Companies = lazy(() => import("./pages/Companies"));
+const SupportGroups = lazy(() => import("./pages/SupportGroups"));
+const Sites = lazy(() => import("./pages/Sites"));
+const ProductCategories = lazy(() => import("./pages/ProductCategories"));
+const Services = lazy(() => import("./pages/Services"));
+const BusinessHours = lazy(() => import("./pages/BusinessHours"));
+const Clusters = lazy(() => import("./pages/Clusters"));
+const MttrPresets = lazy(() => import("./pages/MttrPresets"));
+const ImportHistory = lazy(() => import("./pages/ImportHistory"));
+const AuditLog = lazy(() => import("./pages/AuditLog"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Users = lazy(() => import("./pages/Users"));
+const SupportGroupCompanies = lazy(() => import("./pages/SupportGroupCompanies"));
+const SupportOrganizations = lazy(() => import("./pages/SupportOrganizations"));
+
+function Loading() {
+  return (
+    <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>
+      Loading…
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -30,35 +41,39 @@ export default function App() {
 
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
-          {/* Operations — everyone */}
-          <Route index element={<Home />} />
-          <Route path="create" element={<CreateMetrics />} />
-          <Route path="history" element={<MetricsHistory />} />
-          <Route path="notifications" element={<Notifications />} />
+          <Route
+            index
+            element={
+              <Suspense fallback={<Loading />}>
+                <Home />
+              </Suspense>
+            }
+          />
 
-          {/* Configuration — Admin or Editor */}
           <Route element={<RequireRole role="editor" />}>
-            <Route path="companies" element={<Companies />} />
-            <Route path="sg-companies" element={<SupportGroupCompanies />} />
-            <Route path="support-orgs" element={<SupportOrganizations />} />
-            <Route path="groups" element={<SupportGroups />} />
-            <Route path="sites" element={<Sites />} />
-            <Route path="products" element={<ProductCategories />} />
-            <Route path="services" element={<Services />} />
-            <Route path="bhours" element={<BusinessHours />} />
-            <Route path="clusters" element={<Clusters />} />
-            <Route path="mttrs" element={<MttrPresets />} />
+            <Route path="companies" element={<Suspense fallback={<Loading />}><Companies /></Suspense>} />
+            <Route path="sg-companies" element={<Suspense fallback={<Loading />}><SupportGroupCompanies /></Suspense>} />
+            <Route path="support-orgs" element={<Suspense fallback={<Loading />}><SupportOrganizations /></Suspense>} />
+            <Route path="groups" element={<Suspense fallback={<Loading />}><SupportGroups /></Suspense>} />
+            <Route path="sites" element={<Suspense fallback={<Loading />}><Sites /></Suspense>} />
+            <Route path="products" element={<Suspense fallback={<Loading />}><ProductCategories /></Suspense>} />
+            <Route path="services" element={<Suspense fallback={<Loading />}><Services /></Suspense>} />
+            <Route path="bhours" element={<Suspense fallback={<Loading />}><BusinessHours /></Suspense>} />
+            <Route path="clusters" element={<Suspense fallback={<Loading />}><Clusters /></Suspense>} />
+            <Route path="mttrs" element={<Suspense fallback={<Loading />}><MttrPresets /></Suspense>} />
           </Route>
 
-          {/* Administration — Admin only */}
           <Route element={<RequireRole role="admin" />}>
-            <Route path="users" element={<Users />} />
-            <Route path="import-history" element={<ImportHistory />} />
-            <Route path="audit" element={<AuditLog />} />
+            <Route path="users" element={<Suspense fallback={<Loading />}><Users /></Suspense>} />
+            <Route path="import-history" element={<Suspense fallback={<Loading />}><ImportHistory /></Suspense>} />
+            <Route path="audit" element={<Suspense fallback={<Loading />}><AuditLog /></Suspense>} />
           </Route>
 
-          <Route path="forbidden" element={<Forbidden />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="create" element={<Suspense fallback={<Loading />}><CreateMetrics /></Suspense>} />
+          <Route path="history" element={<Suspense fallback={<Loading />}><MetricsHistory /></Suspense>} />
+          <Route path="notifications" element={<Suspense fallback={<Loading />}><Notifications /></Suspense>} />
+          <Route path="forbidden" element={<Suspense fallback={<Loading />}><Forbidden /></Suspense>} />
+          <Route path="*" element={<Suspense fallback={<Loading />}><NotFound /></Suspense>} />
         </Route>
       </Route>
     </Routes>

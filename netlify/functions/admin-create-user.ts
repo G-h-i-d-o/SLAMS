@@ -1,5 +1,6 @@
 import type { Handler } from "@netlify/functions";
 import { getSupabaseAdmin } from "./_shared/supabaseAdmin";
+import { checkRateLimit, getClientIp } from "./_shared/rateLimit";
 
 type Role = "admin" | "editor" | "user";
 
@@ -34,6 +35,11 @@ async function handle(event: Parameters<Handler>[0]) {
   if (event.httpMethod !== "POST") {
     return json(405, { error: "Method not allowed" });
   }
+
+  // ---- Rate limit: 20 user creations per hour per IP ----
+  const ip = getClientIp(event.headers as Record<string, string | undefined>);
+  const rl = checkRateLimit(`create-user:${ip}`, 20, 60 * 60 * 1000);
+  if (rl) return rl;
 
   const authHeader =
     event.headers.authorization ?? event.headers.Authorization ?? "";

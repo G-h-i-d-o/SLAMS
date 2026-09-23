@@ -1,19 +1,25 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import TurnstileWidget from "../components/ui/TurnstileWidget";
 
 export default function Login() {
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: Location })?.from?.pathname ?? "/";
+  const from =
+    (location.state as { from?: Location })?.from?.pathname ?? "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // If already signed in, redirect
+  const turnstileEnabled = !!import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  const onToken = useCallback((t: string) => setToken(t), []);
+
   if (user) {
     navigate(from, { replace: true });
     return null;
@@ -22,6 +28,13 @@ export default function Login() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // If Turnstile is enabled but no token arrived, block the submit
+    if (turnstileEnabled && !token) {
+      setError("Please complete the security check.");
+      return;
+    }
+
     setBusy(true);
     try {
       await signIn(email.trim(), password);
@@ -61,7 +74,14 @@ export default function Login() {
           required
         />
 
-        <button className="btn btn-primary btn-block" type="submit" disabled={busy} style={{ padding: 11 }}>
+        <TurnstileWidget onToken={onToken} />
+
+        <button
+          className="btn btn-primary btn-block"
+          type="submit"
+          disabled={busy || (turnstileEnabled && !token)}
+          style={{ padding: 11 }}
+        >
           {busy ? "Signing in…" : "Sign In"}
         </button>
       </form>

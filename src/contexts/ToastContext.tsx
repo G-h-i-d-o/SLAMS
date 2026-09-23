@@ -31,7 +31,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toast-stack">
+      <div className="toast-stack" role="status" aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
           <div key={t.id} className={`toast ${t.kind === "error" ? "error" : ""}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
