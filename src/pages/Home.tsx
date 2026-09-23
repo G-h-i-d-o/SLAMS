@@ -13,6 +13,7 @@ import {
 } from "../hooks/useDashboard";
 import { useRealtimeMetrics } from "../hooks/useRealtimeMetrics";
 
+
 export default function Home() {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
