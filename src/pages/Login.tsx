@@ -1,5 +1,5 @@
 import { useState, FormEvent, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import TurnstileWidget from "../components/ui/TurnstileWidget";
 
@@ -7,8 +7,15 @@ export default function Login() {
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Where to send the user after sign-in. Ignore "/" and "/login" if the
+  // RequireAuth guard happened to redirect from those — we want everyone
+  // landing on the dashboard by default.
+  const rawFrom = (location.state as { from?: Location })?.from?.pathname;
   const from =
-    (location.state as { from?: Location })?.from?.pathname ?? "/";
+    rawFrom && rawFrom !== "/" && rawFrom !== "/login"
+      ? rawFrom
+      : "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,7 +24,6 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
 
   const turnstileEnabled = !!import.meta.env.VITE_TURNSTILE_SITE_KEY;
-
   const onToken = useCallback((t: string) => setToken(t), []);
 
   if (user) {
@@ -29,7 +35,6 @@ export default function Login() {
     e.preventDefault();
     setError(null);
 
-    // If Turnstile is enabled but no token arrived, block the submit
     if (turnstileEnabled && !token) {
       setError("Please complete the security check.");
       return;
@@ -49,7 +54,11 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <form className="login-card" onSubmit={onSubmit}>
-        <h1>SLA Management Systems</h1>
+        <div className="login-brand">
+          <div className="login-brand-mark">SLAMS</div>
+        </div>
+
+        <h1>SLA Management System</h1>
         <p>Sign in to continue</p>
 
         {error && <div className="error">{error}</div>}
@@ -84,6 +93,12 @@ export default function Login() {
         >
           {busy ? "Signing in…" : "Sign In"}
         </button>
+
+        <div style={{ textAlign: "center", marginTop: 18, fontSize: 12 }}>
+          <Link to="/" style={{ color: "var(--muted)" }}>
+            ← Back to home
+          </Link>
+        </div>
       </form>
     </div>
   );

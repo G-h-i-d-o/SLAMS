@@ -14,6 +14,7 @@ export type AdminUserProfile = {
 };
 
 const QUERY_KEY = ["admin", "users"];
+const AUDIT_KEY = ["audit_log"];
 
 export function useAdminUsers() {
   return useQuery({
@@ -66,6 +67,9 @@ async function callAdminFunction(
   return data;
 }
 
+/* -------------------------------------------------------------------- */
+/*  Create user                                                        */
+/* -------------------------------------------------------------------- */
 export type CreateUserInput = {
   email: string;
   password: string;
@@ -83,24 +87,36 @@ export function useCreateUser() {
         full_name: input.full_name,
         role: input.role,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      qc.invalidateQueries({ queryKey: AUDIT_KEY });
+    },
   });
 }
 
+/* -------------------------------------------------------------------- */
+/*  Change role (via RPC — logs an explicit audit entry with the actor) */
+/* -------------------------------------------------------------------- */
 export function useUpdateUserRole() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, role }: { id: string; role: Role }) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ role })
-        .eq("id", id);
+      const { error } = await supabase.rpc("admin_change_role", {
+        p_target_id: id,
+        p_new_role: role,
+      });
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      qc.invalidateQueries({ queryKey: AUDIT_KEY });
+    },
   });
 }
 
+/* -------------------------------------------------------------------- */
+/*  Toggle active (via Netlify Function)                                */
+/* -------------------------------------------------------------------- */
 export function useToggleUserActive() {
   const qc = useQueryClient();
   return useMutation({
@@ -109,10 +125,16 @@ export function useToggleUserActive() {
         user_id: id,
         is_active,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      qc.invalidateQueries({ queryKey: AUDIT_KEY });
+    },
   });
 }
 
+/* -------------------------------------------------------------------- */
+/*  Permanent delete (via Netlify Function)                             */
+/* -------------------------------------------------------------------- */
 export function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({
@@ -120,6 +142,9 @@ export function useDeleteUser() {
       callAdminFunction("/.netlify/functions/admin-delete-user", {
         user_id: id,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+      qc.invalidateQueries({ queryKey: AUDIT_KEY });
+    },
   });
 }

@@ -89,7 +89,7 @@ const SECTIONS: NavSection[] = [
   {
     label: "Operations",
     items: [
-      { to: "/",              label: "Home (Dashboard)", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.home}</svg> },
+      { to: "/dashboard",     label: "Home (Dashboard)", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.home}</svg> },
       { to: "/create",        label: "Create Metrics",   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.plus}</svg> },
       { to: "/history",       label: "Metrics History",  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.clock}</svg> },
       { to: "/notifications", label: "Notifications",    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{icon.bell}</svg> },
@@ -159,7 +159,6 @@ export default function Sidebar({
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === "/"}
                   className={({ isActive }) =>
                     `nav-item ${isActive ? "active" : ""}`
                   }

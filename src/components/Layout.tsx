@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
 const META: Record<string, { title: string; sub: string }> = {
-  "/":               { title: "Home", sub: "Service level overview" },
+  "/dashboard":      { title: "Home", sub: "Service level overview" },
   "/create":         { title: "Create Metrics", sub: "Define a new service level objective" },
   "/history":        { title: "Metrics History", sub: "All SLA evaluations" },
   "/notifications":  { title: "Notifications", sub: "Breach alerts and system activity" },
