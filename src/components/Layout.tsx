@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import IdleGuard from "./IdleGuard";
 
 const META: Record<string, { title: string; sub: string }> = {
   "/dashboard":      { title: "Home", sub: "Service level overview" },
@@ -44,6 +45,8 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      <IdleGuard />
     </div>
   );
 }
