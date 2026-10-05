@@ -13,7 +13,11 @@ import { useWizardDraft } from "../hooks/useWizardDraft";
 import { useWizardLookups } from "../hooks/useWizardLookups";
 import { useToast } from "../contexts/ToastContext";
 import { createMetric } from "../lib/api/createMetric";
-import { isValidMttrResolve, type MetricWizardForm } from "../types/metrics";
+import {
+  isValidMttrResolve,
+  type MetricWizardForm,
+  type ServiceSelection,
+} from "../types/metrics";
 
 const PRIORITIES = ["critical", "high", "medium", "low"] as const;
 
@@ -25,19 +29,40 @@ function validateStep(step: number, f: MetricWizardForm): string | null {
     if (!f.document_id.trim()) return "Document ID is required";
     if (!f.signed_date) return "Signed Date is required";
   }
+
   if (step === 2) {
-    if (!f.support_group_id) return "Please select a support group";
+    if (f.support_group_count < 1) {
+      return "Please choose how many support groups you need";
+    }
+    for (let i = 0; i < f.support_group_count; i++) {
+      if (!f.support_groups[i]) {
+        return f.support_group_count === 1
+          ? "Please select a support group"
+          : `Support Group ${i + 1} is required`;
+      }
+    }
     if (!f.start_date) return "Start Date is required";
     if (!f.end_date) return "End Date is required";
   }
+
   if (step === 3) {
-    if (!f.service_category) return "Please select a service category";
-    if (!f.service_sub_category) return "Please select a service sub category";
-    if (!f.service_id) return "Please select a service component";
+    if (f.service_count < 1) {
+      return "Please choose how many services you need";
+    }
+    for (let i = 0; i < f.service_count; i++) {
+      const s = f.services[i];
+      const pfx = f.service_count === 1 ? "" : `Service ${i + 1}: `;
+      if (!s?.category) return `${pfx}Category is required`;
+      if (!s?.sub_category) return `${pfx}Sub Category is required`;
+      if (!s?.service_id) return `${pfx}Component is required`;
+    }
   }
+
   if (step === 4) {
-    if (String(f.rollup_performance).trim() === "") return "% Roll-up Performance is required";
-    if (isNaN(Number(f.rollup_performance))) return "% Roll-up Performance must be numeric";
+    if (String(f.rollup_performance).trim() === "")
+      return "% Roll-up Performance is required";
+    if (isNaN(Number(f.rollup_performance)))
+      return "% Roll-up Performance must be numeric";
     if (!f.tiered_type) return "Tiered / Configured is required";
     for (const p of PRIORITIES) {
       if (!(f[`bh_${p}` as keyof MetricWizardForm] as string)) {
@@ -49,24 +74,64 @@ function validateStep(step: number, f: MetricWizardForm): string | null {
     const showResolve = f.mttr_mode === "resolve" || f.mttr_mode === "both";
     if (showRespond) {
       for (const p of PRIORITIES) {
-        const v = String(f[`mtt_respond_${p}` as keyof MetricWizardForm] ?? "").trim();
+        const v = String(
+          f[`mtt_respond_${p}` as keyof MetricWizardForm] ?? ""
+        ).trim();
         if (!v) return `MTTrespond ${p} is required`;
         if (isNaN(Number(v))) return `MTTrespond ${p} must be numeric`;
       }
     }
     if (showResolve) {
       for (const p of PRIORITIES) {
-        const v = String(f[`mtt_resolve_${p}` as keyof MetricWizardForm] ?? "").trim();
+        const v = String(
+          f[`mtt_resolve_${p}` as keyof MetricWizardForm] ?? ""
+        ).trim();
         if (!v) return `MTTresolve ${p} is required`;
-        if (!isValidMttrResolve(v)) return `MTTresolve ${p} must be a number or "TD"`;
+        if (!isValidMttrResolve(v))
+          return `MTTresolve ${p} must be a number or "TD"`;
       }
     }
   }
+
   if (step === 5) {
     if (!f.cluster_id) return "Cluster is required";
     if (!f.action) return "Action is required";
   }
+
   return null;
+}
+
+type Combination = {
+  supportGroupId: string;
+  service: ServiceSelection;
+  index: number;
+};
+
+function buildCombinations(f: MetricWizardForm): Combination[] {
+  const groups = (f.support_groups ?? []).filter(Boolean);
+  const services = (f.services ?? []).filter((s) => s.service_id);
+  if (!groups.length || !services.length) return [];
+  const combos: Combination[] = [];
+  let idx = 0;
+  for (const g of groups) {
+    for (const s of services) {
+      combos.push({ supportGroupId: g, service: s, index: idx++ });
+    }
+  }
+  return combos;
+}
+
+function newBatchId(): string {
+  // crypto.randomUUID is available in all modern browsers
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  // fallback
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 export default function CreateMetrics() {
@@ -79,7 +144,6 @@ export default function CreateMetrics() {
   const [mttrModalOpen, setMttrModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Auto-open MTTR modal on first arrival at step 4
   useEffect(() => {
     if (step === 4 && !draft.form.mttr_mode) {
       setMttrModalOpen(true);
@@ -110,23 +174,91 @@ export default function CreateMetrics() {
       }
     }
 
+    const combos = buildCombinations(draft.form);
+    if (combos.length === 0) {
+      error("No valid combinations to create");
+      return;
+    }
+
     setSubmitting(true);
-    try {
-      await createMetric(draft.form);
-      success(`Metric ${draft.form.document_id} created`);
+
+    // All metrics from one submit share a batch_id — even the single-metric case,
+    // which keeps the export logic uniform.
+    const batchId = combos.length > 1 ? newBatchId() : null;
+
+    const createdIds: string[] = [];
+    const failures: string[] = [];
+
+    for (const combo of combos) {
+      const variant: MetricWizardForm = {
+        ...draft.form,
+        support_group_id: combo.supportGroupId,
+        service_category: combo.service.category,
+        service_sub_category: combo.service.sub_category,
+        service_id: combo.service.service_id,
+      };
+
+      try {
+        const id = await createMetric(variant, batchId);
+        createdIds.push(id);
+        console.log(
+          `[batch ${batchId ?? "single"}] created #${combo.index + 1}`,
+          {
+            document_id: variant.document_id,
+            support_group_id: combo.supportGroupId,
+            service_id: combo.service.service_id,
+            id,
+          }
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "unknown error";
+        failures.push(`#${combo.index + 1}: ${msg}`);
+        console.error(
+          `[batch ${batchId ?? "single"}] FAILED #${combo.index + 1}`,
+          {
+            document_id: variant.document_id,
+            support_group_id: combo.supportGroupId,
+            service_id: combo.service.service_id,
+            error: msg,
+          }
+        );
+      }
+    }
+
+    setSubmitting(false);
+
+    if (failures.length === 0) {
+      success(
+        combos.length > 1
+          ? `${createdIds.length} metrics created as one batch`
+          : `Metric created`
+      );
       draft.reset();
       setStep(1);
       navigate("/history");
-    } catch (err) {
-      error(err instanceof Error ? err.message : "Failed to create metric");
-    } finally {
-      setSubmitting(false);
+    } else if (createdIds.length === 0) {
+      error(`All ${failures.length} creation(s) failed. See browser console.`);
+      console.error("Metric creation failures:", failures);
+    } else {
+      error(
+        `${createdIds.length} created, ${failures.length} failed. See browser console.`
+      );
+      console.error("Metric creation failures:", failures);
+      draft.reset();
+      setStep(1);
+      navigate("/history");
     }
   }
 
   if (lookups.loading) {
-    return <div className="card"><div className="empty">Loading reference data…</div></div>;
+    return (
+      <div className="card">
+        <div className="empty">Loading reference data…</div>
+      </div>
+    );
   }
+
+  const combos = buildCombinations(draft.form);
 
   return (
     <>
@@ -136,13 +268,25 @@ export default function CreateMetrics() {
 
           <div className="wizard-body">
             {step === 1 && (
-              <Step1Company form={draft.form} update={draft.update} lookups={lookups} />
+              <Step1Company
+                form={draft.form}
+                update={draft.update}
+                lookups={lookups}
+              />
             )}
             {step === 2 && (
-              <Step2Support form={draft.form} update={draft.update} lookups={lookups} />
+              <Step2Support
+                form={draft.form}
+                update={draft.update}
+                lookups={lookups}
+              />
             )}
             {step === 3 && (
-              <Step3Product form={draft.form} update={draft.update} lookups={lookups} />
+              <Step3Product
+                form={draft.form}
+                update={draft.update}
+                lookups={lookups}
+              />
             )}
             {step === 4 && (
               <Step4Terms
@@ -153,13 +297,21 @@ export default function CreateMetrics() {
               />
             )}
             {step === 5 && (
-              <Step5Cluster form={draft.form} update={draft.update} lookups={lookups} />
+              <Step5Cluster
+                form={draft.form}
+                update={draft.update}
+                lookups={lookups}
+              />
             )}
             {step === 6 && <Step6Review form={draft.form} lookups={lookups} />}
           </div>
 
           <div className="wizard-foot">
-            <button className="btn btn-ghost" onClick={prev} disabled={step === 1}>
+            <button
+              className="btn btn-ghost"
+              onClick={prev}
+              disabled={step === 1 || submitting}
+            >
               ← Back
             </button>
             {step < 6 ? (
@@ -167,8 +319,16 @@ export default function CreateMetrics() {
                 Next →
               </button>
             ) : (
-              <button className="btn btn-primary" onClick={submit} disabled={submitting}>
-                {submitting ? "Creating…" : "Create Metric"}
+              <button
+                className="btn btn-primary"
+                onClick={submit}
+                disabled={submitting}
+              >
+                {submitting
+                  ? "Creating…"
+                  : combos.length > 1
+                  ? `Create ${combos.length} Metrics`
+                  : "Create Metric"}
               </button>
             )}
           </div>
@@ -182,11 +342,7 @@ export default function CreateMetrics() {
         onClose={() => setMttrModalOpen(false)}
         form={draft.form}
         update={draft.update}
-        onConfirm={(mode) => {
-          if (mode === "resolve" || mode === "both") {
-            // no-op; nothing extra
-          }
-        }}
+        onConfirm={() => undefined}
       />
     </>
   );

@@ -1410,3 +1410,93 @@ tbody tr.row-highlight {
 @media (max-width: 640px) {
   .landing-footer-inner { flex-direction: column; align-items: flex-start; }
 }
+/* ============ Count prompt modal ============ */
+.count-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: .15s;
+  background: #fff;
+}
+.count-option:hover {
+  border-color: #c7d2fe;
+  background: #fafbff;
+}
+.count-option.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.count-option input[type="radio"] {
+  margin-top: 3px;
+  accent-color: var(--primary);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.count-option-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.count-option-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Row header for each numbered dropdown group */
+.multi-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border);
+}
+.multi-row-head .num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 11.5px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.multi-row-head .label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--faint);
+}
+.summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fafbfd;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12.5px;
+  margin-bottom: 14px;
+}
+.summary-bar .label {
+  font-weight: 600;
+  color: var(--muted);
+}
+.summary-bar .value {
+  font-weight: 700;
+  color: var(--primary);
+}
+.summary-bar .btn {
+  margin-left: auto;
+}

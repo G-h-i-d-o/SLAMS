@@ -10,56 +10,98 @@ type Props = {
 export default function LivePreview({ form, lookups, step }: Props) {
   const companyName =
     lookups.companies.find((c) => c.id === form.company_id)?.name ?? "";
-  const product = lookups.products.find((p) => p.id === form.product_category_id);
-  const service = lookups.services.find((s) => s.id === form.service_id);
-  const supportGroup = lookups.supportGroups.find((g) => g.id === form.support_group_id);
+  const product = lookups.products.find(
+    (p) => p.id === form.product_category_id
+  );
   const site = lookups.sites.find((s) => s.id === form.site_id);
   const cluster = lookups.clusters.find((c) => c.id === form.cluster_id);
+
+  const sgCount = (form.support_groups ?? []).filter(Boolean).length;
+  const svcCount = (form.services ?? []).filter((s) => s.service_id).length;
+  const totalMetrics = Math.max(1, sgCount) * Math.max(1, svcCount);
 
   return (
     <div>
       <div className="preview-card" style={{ marginBottom: 16 }}>
         <div className="pc-label">Live Preview</div>
         <div className="pc-name">{form.document_id || "New Metric"}</div>
-        <div style={{ fontSize: 12, color: "#c7d2fe", position: "relative", zIndex: 1 }}>
+        <div
+          style={{
+            fontSize: 12,
+            color: "#c7d2fe",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           {companyName || "— select company —"}
         </div>
 
         <div className="pc-chips">
           {form.action && <span className="pc-chip">{form.action}</span>}
           {form.tiered_type && <span className="pc-chip">{form.tiered_type}</span>}
-          {form.rollup_performance && <span className="pc-chip">{form.rollup_performance}% roll-up</span>}
+          {form.rollup_performance && (
+            <span className="pc-chip">{form.rollup_performance}% roll-up</span>
+          )}
           {form.mttr_mode && <span className="pc-chip">MTTR: {form.mttr_mode}</span>}
+          {totalMetrics > 1 && (
+            <span
+              className="pc-chip"
+              style={{ background: "rgba(251,191,36,.22)", borderColor: "rgba(251,191,36,.4)" }}
+            >
+              × {totalMetrics} metrics
+            </span>
+          )}
         </div>
 
         <div className="pc-rows">
-          <div className="pc-row"><span>Customer #</span><span>{form.customer_number || "—"}</span></div>
-          <div className="pc-row"><span>Contact</span><span>{form.contact_company || "—"}</span></div>
           <div className="pc-row">
-            <span>Support Group</span>
+            <span>Customer #</span>
+            <span>{form.customer_number || "—"}</span>
+          </div>
+          <div className="pc-row">
+            <span>Contact</span>
+            <span>{form.contact_company || "—"}</span>
+          </div>
+          <div className="pc-row">
+            <span>Support Groups</span>
             <span>
-              {(() => {
-                if (!supportGroup) return "—";
-                const org = lookups.supportOrganizations.find(
-                  (o) => o.id === supportGroup.support_organization_id
-                );
-                const sgc = org
-                  ? lookups.supportGroupCompanies.find(
-                      (c) => c.id === org.support_group_company_id
-                    )
-                  : null;
-                const path = [sgc?.name, org?.name, supportGroup.name]
-                  .filter(Boolean)
-                  .join(" › ");
-                return path || supportGroup.name;
-              })()}
+              {sgCount === 0
+                ? "—"
+                : sgCount === 1
+                ? lookups.supportGroups.find((g) => g.id === form.support_groups[0])
+                    ?.name ?? "1 selected"
+                : `${sgCount} selected`}
             </span>
           </div>
-          <div className="pc-row"><span>Site</span><span>{site?.name ?? "—"}</span></div>
-          <div className="pc-row"><span>Product</span><span>{product?.product_name ?? "—"}</span></div>
-          <div className="pc-row"><span>Service</span><span>{service?.component ?? "—"}</span></div>
-          <div className="pc-row"><span>Dates</span><span>{form.start_date || "—"} → {form.end_date || "—"}</span></div>
-          <div className="pc-row"><span>Cluster</span><span>{cluster?.name ?? "—"}</span></div>
+          <div className="pc-row">
+            <span>Site</span>
+            <span>{site?.name ?? "—"}</span>
+          </div>
+          <div className="pc-row">
+            <span>Product</span>
+            <span>{product?.product_name ?? "—"}</span>
+          </div>
+          <div className="pc-row">
+            <span>Services</span>
+            <span>
+              {svcCount === 0
+                ? "—"
+                : svcCount === 1
+                ? lookups.services.find((s) => s.id === form.services[0]?.service_id)
+                    ?.component ?? "1 selected"
+                : `${svcCount} selected`}
+            </span>
+          </div>
+          <div className="pc-row">
+            <span>Dates</span>
+            <span>
+              {form.start_date || "—"} → {form.end_date || "—"}
+            </span>
+          </div>
+          <div className="pc-row">
+            <span>Cluster</span>
+            <span>{cluster?.name ?? "—"}</span>
+          </div>
         </div>
       </div>
 
@@ -68,7 +110,14 @@ export default function LivePreview({ form, lookups, step }: Props) {
           <h3>Progress</h3>
         </div>
         <div className="card-body">
-          <div style={{ height: 6, background: "#eef2f7", borderRadius: 20, overflow: "hidden" }}>
+          <div
+            style={{
+              height: 6,
+              background: "#eef2f7",
+              borderRadius: 20,
+              overflow: "hidden",
+            }}
+          >
             <div
               style={{
                 width: `${(step / 6) * 100}%`,
@@ -78,7 +127,14 @@ export default function LivePreview({ form, lookups, step }: Props) {
               }}
             />
           </div>
-          <div style={{ textAlign: "center", fontSize: 12, color: "#64748b", marginTop: 10 }}>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: 12,
+              color: "#64748b",
+              marginTop: 10,
+            }}
+          >
             Step {step} of 6
           </div>
         </div>

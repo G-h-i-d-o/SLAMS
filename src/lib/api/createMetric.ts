@@ -1,12 +1,12 @@
 import { supabase } from "../supabase";
 import type { MetricWizardForm } from "../../types/metrics";
 
-/**
- * Builds the JSON payload that the Postgres function `create_metric` expects.
- * Empty strings become null so Postgres can apply defaults / CHECK constraints.
- */
-function toPayload(f: MetricWizardForm): Record<string, unknown> {
-  const n = (v: string) => (String(v ?? "").trim() === "" ? null : String(v).trim());
+function toPayload(
+  f: MetricWizardForm,
+  batchId?: string | null
+): Record<string, unknown> {
+  const n = (v: string) =>
+    String(v ?? "").trim() === "" ? null : String(v).trim();
 
   return {
     document_id: f.document_id.trim(),
@@ -15,7 +15,7 @@ function toPayload(f: MetricWizardForm): Record<string, unknown> {
     contact_company: f.contact_company.trim(),
     support_group_id: f.support_group_id,
     site_id: n(f.site_id),
-    product_category_id: f.product_category_id,
+    product_category_id: n(f.product_category_id),
     service_id: f.service_id,
     start_date: f.start_date,
     end_date: f.end_date,
@@ -39,12 +39,16 @@ function toPayload(f: MetricWizardForm): Record<string, unknown> {
     vendor_group: n(f.vendor_group),
     exclude_m7: !!f.exclude_m7,
     action: f.action || "New",
+    batch_id: batchId ?? null,
   };
 }
 
-export async function createMetric(form: MetricWizardForm): Promise<string> {
+export async function createMetric(
+  form: MetricWizardForm,
+  batchId?: string | null
+): Promise<string> {
   const { data, error } = await supabase.rpc("create_metric", {
-    payload: toPayload(form),
+    payload: toPayload(form, batchId),
   });
   if (error) throw new Error(error.message);
   return data as string;

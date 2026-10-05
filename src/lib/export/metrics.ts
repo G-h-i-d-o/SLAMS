@@ -1,10 +1,6 @@
 import * as XLSX from "xlsx";
 import type { MetricFull } from "../../types/metrics";
 
-/* --------------------------------------------------------------
-   The 58-column export layout — frozen as of Phase 0.
-   Any change here is a breaking change to the Excel contract.
-   -------------------------------------------------------------- */
 export const EXPORT_COLUMNS: string[] = [
   "Start Date",
   "End Date",
@@ -66,9 +62,6 @@ export const EXPORT_COLUMNS: string[] = [
   "Exclude M7",
 ];
 
-/* Columns forced to Excel "Text" format (z:'@').
-   Numeric values written here produce Excel's green
-   "number stored as text" triangle. */
 const TEXT_FORMAT_COLUMNS = [
   "Start Date",
   "End Date",
@@ -100,7 +93,7 @@ function metricToRow(m: MetricFull): Record<string, unknown> {
     "End Date": fmtDate(m.end_date),
     "Signed Date": fmtDate(m.signed_date),
     "Customer Number": m.customer_number ?? "",
-    "Contact_Company": m.contact_company ?? "",
+    Contact_Company: m.contact_company ?? "",
     DocumentID: m.document_id ?? "",
     "Support Group": m.support_group_name ?? "",
     Site: m.site_name ?? "",
@@ -167,7 +160,7 @@ function applyTextFormatting(
   });
 
   rows.forEach((row, rIdx) => {
-    const R = rIdx + 1; // header is row 0
+    const R = rIdx + 1;
     TEXT_FORMAT_COLUMNS.forEach((col) => {
       const C = colIndex[col];
       if (C === undefined) return;
@@ -177,34 +170,71 @@ function applyTextFormatting(
         delete ws[addr];
         return;
       }
-      // t:'s' → string cell · z:'@' → Excel Text number-format
       ws[addr] = { t: "s", v: String(raw), z: "@" };
     });
   });
 }
 
-function buildWorkbook(rows: Record<string, unknown>[]): XLSX.WorkBook {
+function safeFilename(s: string): string {
+  return s.replace(/[^A-Za-z0-9_\-\.]/g, "_");
+}
+
+function todayStamp(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/* -------------------------------------------------------------------- */
+/*  Core export — writes N metrics into a single sheet                  */
+/* -------------------------------------------------------------------- */
+export function exportMetricsGroup(
+  metrics: MetricFull[],
+  filenameBase: string
+): void {
+  if (!metrics.length) throw new Error("No metrics to export");
+  const rows = metrics.map(metricToRow);
   const ws = XLSX.utils.json_to_sheet(rows, { header: EXPORT_COLUMNS });
   applyTextFormatting(ws, rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Combined");
-  return wb;
+  XLSX.writeFile(wb, `${safeFilename(filenameBase)}_${todayStamp()}.xlsx`);
 }
 
-export function exportSingleMetric(m: MetricFull) {
-  const row = metricToRow(m);
-  const wb = buildWorkbook([row]);
-  const safeDocId = String(m.document_id || m.id).replace(
-    /[^A-Za-z0-9_\-\.]/g,
-    "_"
-  );
-  const filename = `${safeDocId}_${new Date().toISOString().slice(0, 10)}.xlsx`;
-  XLSX.writeFile(wb, filename);
+/* -------------------------------------------------------------------- */
+/*  Export a single metric                                              */
+/* -------------------------------------------------------------------- */
+export function exportSingleMetric(m: MetricFull): void {
+  exportMetricsGroup([m], String(m.document_id || m.id));
 }
 
-export function exportMasterSheet(metrics: MetricFull[]) {
-  const rows = metrics.map(metricToRow);
-  const wb = buildWorkbook(rows);
-  const filename = `SLA_Export_${new Date().toISOString().slice(0, 10)}.xlsx`;
-  XLSX.writeFile(wb, filename);
+/* -------------------------------------------------------------------- */
+/*  Export an entire batch — always one sheet, regardless of count      */
+/* -------------------------------------------------------------------- */
+export function exportBatch(metrics: MetricFull[], baseName?: string): void {
+  if (metrics.length <= 1) {
+    if (metrics[0]) exportSingleMetric(metrics[0]);
+    return;
+  }
+  const name =
+    baseName ??
+    String(metrics[0]?.document_id ?? "batch").replace(/_\d+$/, "");
+  exportMetricsGroup(metrics, `${name}_batch`);
+}
+
+/* -------------------------------------------------------------------- */
+/*  Export an arbitrary selection — always one sheet                    */
+/* -------------------------------------------------------------------- */
+export function exportSelected(metrics: MetricFull[]): void {
+  if (!metrics.length) throw new Error("No metrics selected");
+  if (metrics.length === 1) {
+    exportSingleMetric(metrics[0]);
+    return;
+  }
+  exportMetricsGroup(metrics, `selection_${metrics.length}_metrics`);
+}
+
+/* -------------------------------------------------------------------- */
+/*  Master export — every metric in one sheet                           */
+/* -------------------------------------------------------------------- */
+export function exportMasterSheet(metrics: MetricFull[]): void {
+  exportMetricsGroup(metrics, "SLA_Export");
 }

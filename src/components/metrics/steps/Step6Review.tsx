@@ -1,6 +1,5 @@
 import type { MetricWizardForm } from "../../../types/metrics";
 import type { WizardLookups } from "../../../hooks/useWizardLookups";
-import { isValidMttrResolve } from "../../../types/metrics";
 
 type Props = {
   form: MetricWizardForm;
@@ -10,20 +9,62 @@ type Props = {
 function resolveDisplay(v: string): string {
   const s = String(v ?? "").trim();
   if (!s) return "—";
-  return isValidMttrResolve(s) ? s.toUpperCase() === "TD" ? "TD" : s : s;
+  return s.toUpperCase() === "TD" ? "TD" : s;
 }
 
 export default function Step6Review({ form, lookups }: Props) {
   const company = lookups.companies.find((c) => c.id === form.company_id);
-  const supportGroup = lookups.supportGroups.find((g) => g.id === form.support_group_id);
   const site = lookups.sites.find((s) => s.id === form.site_id);
-  const product = lookups.products.find((p) => p.id === form.product_category_id);
-  const service = lookups.services.find((s) => s.id === form.service_id);
+  const product = lookups.products.find(
+    (p) => p.id === form.product_category_id
+  );
   const cluster = lookups.clusters.find((c) => c.id === form.cluster_id);
-  const bh = (id: string) => lookups.businessHours.find((b) => b.id === id)?.label ?? "—";
+  const bh = (id: string) =>
+    lookups.businessHours.find((b) => b.id === id)?.label ?? "—";
 
-  const showRespond = form.mttr_mode === "respond" || form.mttr_mode === "both";
-  const showResolve = form.mttr_mode === "resolve" || form.mttr_mode === "both";
+  const showRespond =
+    form.mttr_mode === "respond" || form.mttr_mode === "both";
+  const showResolve =
+    form.mttr_mode === "resolve" || form.mttr_mode === "both";
+
+  // Resolve support group display paths
+  const groupRows = (form.support_groups ?? [])
+    .map((id, idx) => {
+      const g = lookups.supportGroups.find((x) => x.id === id);
+      if (!g) return null;
+      const org = lookups.supportOrganizations.find(
+        (o) => o.id === g.support_organization_id
+      );
+      const sgc = org
+        ? lookups.supportGroupCompanies.find(
+            (c) => c.id === org.support_group_company_id
+          )
+        : null;
+      const path = [sgc?.name, org?.name, g.name].filter(Boolean).join(" › ");
+      return { idx, path };
+    })
+    .filter(Boolean) as { idx: number; path: string }[];
+
+  // Resolve service rows
+  const serviceRows = (form.services ?? [])
+    .map((s, idx) => {
+      const svc = lookups.services.find((x) => x.id === s.service_id);
+      if (!svc) return null;
+      return {
+        idx,
+        category: svc.category,
+        sub: svc.sub_category,
+        component: svc.component,
+      };
+    })
+    .filter(Boolean) as {
+    idx: number;
+    category: string;
+    sub: string | null;
+    component: string;
+  }[];
+
+  const totalMetrics = Math.max(1, groupRows.length) * Math.max(1, serviceRows.length);
 
   return (
     <>
@@ -39,9 +80,37 @@ export default function Step6Review({ form, lookups }: Props) {
       </div>
 
       <div className="review-block">
-        <h4>Support & Dates</h4>
+        <h4>
+          Support Groups ({groupRows.length})
+        </h4>
+        <div style={{ display: "grid", gap: 6 }}>
+          {groupRows.length === 0 ? (
+            <div className="cell-sub">None selected</div>
+          ) : (
+            groupRows.map((g) => (
+              <div
+                key={g.idx}
+                style={{
+                  fontSize: 12.5,
+                  padding: "6px 10px",
+                  background: "#fafbfd",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                }}
+              >
+                <strong style={{ color: "var(--primary)", marginRight: 8 }}>
+                  #{g.idx + 1}
+                </strong>
+                {g.path}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="review-block">
+        <h4>Site & Dates</h4>
         <div className="review-grid">
-          <div><span>Support Group</span><span>{supportGroup?.name ?? "—"}</span></div>
           <div><span>Site</span><span>{site?.name ?? "—"}</span></div>
           <div><span>Start</span><span>{form.start_date || "—"}</span></div>
           <div><span>End</span><span>{form.end_date || "—"}</span></div>
@@ -49,13 +118,42 @@ export default function Step6Review({ form, lookups }: Props) {
       </div>
 
       <div className="review-block">
-        <h4>Product & Service</h4>
+        <h4>Product</h4>
         <div className="review-grid">
           <div><span>Product</span><span>{product?.product_name ?? "—"}</span></div>
-          <div><span>Tier</span><span>{product ? `${product.tier1} › ${product.tier2 ?? ""}` : "—"}</span></div>
-          <div><span>Service Cat.</span><span>{form.service_category || "—"}</span></div>
-          <div><span>Sub Cat.</span><span>{form.service_sub_category || "—"}</span></div>
-          <div><span>Component</span><span>{service?.component ?? "—"}</span></div>
+          <div>
+            <span>Tier</span>
+            <span>
+              {product ? `${product.tier1} › ${product.tier2 ?? ""}` : "—"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="review-block">
+        <h4>Services ({serviceRows.length})</h4>
+        <div style={{ display: "grid", gap: 6 }}>
+          {serviceRows.length === 0 ? (
+            <div className="cell-sub">None selected</div>
+          ) : (
+            serviceRows.map((s) => (
+              <div
+                key={s.idx}
+                style={{
+                  fontSize: 12.5,
+                  padding: "6px 10px",
+                  background: "#fafbfd",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                }}
+              >
+                <strong style={{ color: "var(--primary)", marginRight: 8 }}>
+                  #{s.idx + 1}
+                </strong>
+                {s.category} › {s.sub ?? ""} › {s.component}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -102,6 +200,28 @@ export default function Step6Review({ form, lookups }: Props) {
           <div><span>Exclude M7</span><span>{form.exclude_m7 ? "Yes" : "No"}</span></div>
         </div>
       </div>
+
+      {/* Multi-metric warning */}
+      {totalMetrics > 1 && (
+        <div
+          style={{
+            background: "#fffbeb",
+            border: "1px solid #fde68a",
+            color: "#92400e",
+            padding: "12px 16px",
+            borderRadius: 10,
+            fontSize: 12.5,
+            lineHeight: 1.6,
+          }}
+        >
+          <strong>Heads up:</strong> this will create{" "}
+          <strong>{totalMetrics} metrics</strong> — {groupRows.length} support
+          group{groupRows.length === 1 ? "" : "s"} ×{" "}
+          {serviceRows.length} service{serviceRows.length === 1 ? "" : "s"}.
+          Document IDs will be suffixed <code>_1</code>, <code>_2</code>, … to
+          keep them unique.
+        </div>
+      )}
     </>
   );
 }

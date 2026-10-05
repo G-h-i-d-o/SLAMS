@@ -23,7 +23,7 @@ export default function CategoryDetail({ selection, products, metrics }: Props) 
   const branchMetrics = useMemo(
     () =>
       metrics
-        .filter((m) => productIds.has(m.product_category_id))
+        .filter((m) => m.product_category_id && productIds.has(m.product_category_id))
         .sort(
           (a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()

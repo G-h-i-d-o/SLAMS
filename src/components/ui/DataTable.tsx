@@ -4,6 +4,7 @@ export type Column<T> = {
   key: string;
   label: string;
   render?: (row: T) => ReactNode;
+  headerRender?: () => ReactNode;
   align?: "left" | "right";
 };
 
@@ -53,7 +54,7 @@ export default function DataTable<T extends Record<string, unknown>>({
                 key={c.key}
                 style={c.align === "right" ? { textAlign: "right" } : undefined}
               >
-                {c.label}
+                {c.headerRender ? c.headerRender() : c.label}
               </th>
             ))}
             {hasActions && <th style={{ textAlign: "right" }} />}
@@ -72,9 +73,7 @@ export default function DataTable<T extends Record<string, unknown>>({
               ))}
               {hasActions && (
                 <td>
-                  <div className="row-actions" role="group" aria-label="Row actions">
-                    {actions(row)}
-                  </div>
+                  <div className="row-actions">{actions(row)}</div>
                 </td>
               )}
             </tr>
