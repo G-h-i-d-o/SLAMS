@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadProfile(userId: string) {
+  async function loadProfile(userId: string): Promise<boolean> {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, email, full_name, role, is_active")
@@ -46,33 +46,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error("Failed to load profile:", error.message);
       setProfile(null);
-      return;
+      return false;
     }
 
     if (!data.is_active) {
       console.warn("Profile inactive — signing out");
       await supabase.auth.signOut();
       setProfile(null);
-      return;
+      return false;
     }
 
     setProfile(data as Profile);
+    return true;
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    // Initial session bootstrap. Crucially, we DON'T set loading=false
+    // until loadProfile has finished, so RequireRole never sees a
+    // transient null profile on refresh.
+    (async () => {
+      const { data } = await supabase.auth.getSession();
       setSession(data.session);
-      if (data.session?.user) loadProfile(data.session.user.id);
+      if (data.session?.user) {
+        await loadProfile(data.session.user.id);
+      }
       setLoading(false);
-    });
+    })();
 
     const { data: sub } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
+      async (_event, newSession) => {
         setSession(newSession);
         if (newSession?.user) {
-          loadProfile(newSession.user.id);
+          // Keep loading=true until the profile is resolved, so guards
+          // don't bounce mid-flight.
+          setLoading(true);
+          await loadProfile(newSession.user.id);
+          setLoading(false);
         } else {
           setProfile(null);
+          setLoading(false);
         }
       }
     );
