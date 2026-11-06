@@ -232,6 +232,63 @@ export const importSpecs = {
     },
   } as ImportSpec,
 
+    services: {
+    table: "services",
+    title: "Services",
+    columns: [
+      {
+        key: "category",
+        label: "Service Category",
+        required: true,
+        aliases: [
+          "category",
+          "service category",
+          "servicecategory",
+          "service_category",
+        ],
+      },
+      {
+        key: "sub_category",
+        label: "Service Sub Category",
+        aliases: [
+          "sub category",
+          "subcategory",
+          "service sub category",
+          "servicesubcategory",
+          "service_sub_category",
+        ],
+      },
+      {
+        key: "component",
+        label: "Service Component",
+        required: true,
+        aliases: [
+          "component",
+          "service component",
+          "servicecomponent",
+          "service_component",
+        ],
+      },
+      {
+        key: "component_mpss",
+        label: "Service Component (MPSS)",
+        aliases: [
+          "component mpss",
+          "componentmpss",
+          "service component mpss",
+          "service_component_mpss",
+          "mpss",
+        ],
+      },
+    ],
+    sample: {
+      "Service Category": "LAN & Desktop Support Services",
+      "Service Sub Category": "LAN & Desktop Support Services",
+      "Service Component": "Cabling Maintenance Quotation",
+      "Service Component (MPSS)": "",
+    },
+  } as ImportSpec,
+
   clusters: {
     table: "clusters",
     title: "Clusters",

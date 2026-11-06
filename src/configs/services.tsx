@@ -1,4 +1,5 @@
 import type { ConfigSpec } from "../types/config";
+import { importSpecs } from "../lib/import/specs";
 
 export type Service = {
   id: string;
@@ -23,14 +24,30 @@ export const servicesSpec: ConfigSpec<Service> = {
     },
     { key: "category", label: "Category" },
     { key: "sub_category", label: "Sub Category" },
-    { key: "component", label: "Component", render: (r) => <span className="cell-strong">{r.component}</span> },
-    { key: "component_mpss", label: "Component (MPSS)", render: (r) => r.component_mpss || <span className="cell-sub">—</span> },
+    {
+      key: "component",
+      label: "Component",
+      render: (r) => <span className="cell-strong">{r.component}</span>,
+    },
+    {
+      key: "component_mpss",
+      label: "Component (MPSS)",
+      render: (r) =>
+        r.component_mpss || <span className="cell-sub">—</span>,
+    },
   ],
   fields: [
     { key: "category", label: "Service Category", type: "text", required: true },
     { key: "sub_category", label: "Service Sub Category", type: "text" },
-    { key: "component", label: "Service Component", type: "text", required: true, full: true },
+    {
+      key: "component",
+      label: "Service Component",
+      type: "text",
+      required: true,
+      full: true,
+    },
     { key: "component_mpss", label: "Component (MPSS)", type: "text" },
     { key: "is_enabled", label: "Enabled", type: "checkbox", default: true },
   ],
+  import: importSpecs.services,
 };
