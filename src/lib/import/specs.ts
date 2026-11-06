@@ -26,13 +26,19 @@ export const importSpecs = {
       {
         key: "customer_number",
         label: "Customer Number",
-        aliases: ["customer number", "customer_number", "customernumber", "cust no", "customer no"],
+        aliases: [
+          "customer number",
+          "customer_number",
+          "customernumber",
+          "cust no",
+          "customer no",
+        ],
       },
     ],
     sample: { "Company Name": "Northwind Systems", "Customer Number": "9999" },
   } as ImportSpec,
 
-    supportGroupCompanies: {
+  supportGroupCompanies: {
     table: "support_group_companies",
     title: "Support Group Companies",
     columns: [
@@ -60,7 +66,13 @@ export const importSpecs = {
         key: "name",
         label: "Support Organization Name",
         required: true,
-        aliases: ["name", "organization", "support org", "support organization", "org name"],
+        aliases: [
+          "name",
+          "organization",
+          "support org",
+          "support organization",
+          "org name",
+        ],
       },
       {
         key: "support_group_company_id",
@@ -92,18 +104,33 @@ export const importSpecs = {
         key: "name",
         label: "Support Group Name",
         required: true,
-        aliases: ["name", "support group", "support group name", "group", "group name"],
+        aliases: [
+          "name",
+          "support group",
+          "support group name",
+          "group",
+          "group name",
+        ],
       },
       {
         key: "support_organization_id",
         label: "Support Organization",
         required: true,
-        aliases: ["support organization", "support org", "organization", "org", "support company"],
+        aliases: [
+          "support organization",
+          "support org",
+          "organization",
+          "org",
+          "support company",
+        ],
         resolve: (v, l) => resolveByName(l.supportOrganizations)(v),
         resolveHint: "Must match an existing Support Organization name",
       },
     ],
-    sample: { "Support Group Name": "Tier 1 Service Desk", "Support Organization": "Global Services" },
+    sample: {
+      "Support Group Name": "Tier 1 Service Desk",
+      "Support Organization": "Global Services",
+    },
   } as ImportSpec,
 
   sites: {
@@ -139,23 +166,50 @@ export const importSpecs = {
         key: "tier1",
         label: "Product Tier 1",
         required: true,
-        aliases: ["tier1", "tier 1", "product tier1", "product tier 1", "producttier1"],
+        aliases: [
+          "tier1",
+          "tier 1",
+          "product tier1",
+          "product _tier1",
+          "product tier 1",
+          "product_tier1",
+          "producttier1",
+        ],
       },
       {
         key: "tier2",
         label: "Product Tier 2",
-        aliases: ["tier2", "tier 2", "product tier2", "product tier 2", "producttier2"],
+        aliases: [
+          "tier2",
+          "tier 2",
+          "product tier2",
+          "product _tier2",
+          "product tier 2",
+          "product_tier2",
+          "producttier2",
+        ],
       },
       {
         key: "tier3",
         label: "Product Tier 3",
-        aliases: ["tier3", "tier 3", "product tier3", "product tier 3", "producttier3"],
+        aliases: [
+          "tier3",
+          "tier 3",
+          "product tier3",
+          "product _tier3",
+          "product tier 3",
+          "product_tier3",
+          "producttier3",
+        ],
       },
       {
+        // Note: 'product' and 'name' are intentionally NOT aliases here.
+        // Both are too generic and previously caused "Product Tier 1" to be
+        // mistaken for "Product Name" during import.
         key: "product_name",
         label: "Product Name",
         required: true,
-        aliases: ["product", "product name", "productname"],
+        aliases: ["product name", "productname", "product_name"],
       },
       {
         key: "company_id",
@@ -175,6 +229,31 @@ export const importSpecs = {
       "Product Tier 3": "Virtual Machines",
       "Product Name": "VM-Standard",
       Company: "",
+    },
+  } as ImportSpec,
+
+  clusters: {
+    table: "clusters",
+    title: "Clusters",
+    columns: [
+      {
+        key: "name",
+        label: "Cluster Name",
+        required: true,
+        aliases: ["cluster", "cluster name", "clustername", "cluster_name"],
+      },
+      {
+        key: "company_id",
+        label: "Company",
+        required: true,
+        aliases: ["company", "company name", "customer", "customer name"],
+        resolve: (v, l) => resolveByName(l.companies)(v),
+        resolveHint: "Must match an existing Company name",
+      },
+    ],
+    sample: {
+      "Cluster Name": "GDE — Gauteng Department of Education",
+      Company: "NAT Dept of Women, Youth and Persons with Disabilities",
     },
   } as ImportSpec,
 };

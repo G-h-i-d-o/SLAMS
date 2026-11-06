@@ -1,4 +1,5 @@
 import type { ConfigSpec } from "../types/config";
+import { importSpecs } from "../lib/import/specs";
 
 export type Cluster = {
   id: string;
@@ -19,11 +20,16 @@ export const clustersSpec: ConfigSpec<Cluster> = {
       label: "External ID",
       render: (r) => <span className="cell-id">{r.external_id}</span>,
     },
-    { key: "name", label: "Cluster", render: (r) => <span className="cell-strong">{r.name}</span> },
+    {
+      key: "name",
+      label: "Cluster",
+      render: (r) => <span className="cell-strong">{r.name}</span>,
+    },
     {
       key: "company_id",
       label: "Company",
-      render: (r, l) => l.companyNameById[r.company_id] ?? <span className="cell-sub">—</span>,
+      render: (r, l) =>
+        l.companyNameById[r.company_id] ?? <span className="cell-sub">—</span>,
     },
     {
       key: "is_enabled",
@@ -47,4 +53,5 @@ export const clustersSpec: ConfigSpec<Cluster> = {
     },
     { key: "is_enabled", label: "Enabled", type: "checkbox", default: true },
   ],
+  import: importSpecs.clusters,
 };

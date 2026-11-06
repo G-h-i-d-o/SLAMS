@@ -23,35 +23,59 @@ export default function Modal({
   useEffect(() => {
     if (!open) return;
 
-    // Focus the modal container on open
     const el = modalRef.current;
-    if (el) {
-      const focusable = el.querySelector<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    if (!el) return;
+
+    // This effect does ONE thing: trap Tab focus inside the modal.
+    //
+    // It does NOT auto-focus any field (that caused focus to bounce back to
+    // the first input on every keystroke).
+    //
+    // It does NOT handle Escape-to-close or click-outside-to-close.
+    // The modal closes only via:
+    //   - the X button in the header (onClick={onClose})
+    //   - the Cancel button in the footer (parent passes it)
+    //   - the submit button (parent calls onClose after success)
+    function getFocusables(): HTMLElement[] {
+      if (!el) return [];
+      const list = Array.from(
+        el.querySelectorAll<HTMLElement>(
+          'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+        )
       );
-      (focusable ?? el).focus();
+      // Hidden inputs (file, hidden) can't receive focus — exclude them so
+      // the Tab cycle doesn't break.
+      return list.filter((node) => {
+        const r = node.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
     }
 
-    // Trap focus inside the modal
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        onClose();
+      if (e.key !== "Tab") return;
+
+      const focusables = getFocusables();
+      if (focusables.length === 0) {
+        e.preventDefault();
         return;
       }
-      if (e.key !== "Tab" || !el) return;
-
-      const focusables = el.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-      if (!focusables.length) return;
 
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
 
-      if (e.shiftKey && document.activeElement === first) {
+      // If focus is outside the modal (e.g. still on the trigger button
+      // behind the overlay), pull it inside on the next Tab press.
+      if (!el || !el.contains(active)) {
+        e.preventDefault();
+        first.focus();
+        return;
+      }
+
+      if (e.shiftKey && active === first) {
         e.preventDefault();
         last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
+      } else if (!e.shiftKey && active === last) {
         e.preventDefault();
         first.focus();
       }
@@ -59,7 +83,6 @@ export default function Modal({
 
     document.addEventListener("keydown", onKey);
 
-    // Prevent background scroll
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -67,17 +90,13 @@ export default function Modal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = originalOverflow;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    // No onClick handler on the overlay — clicking outside does nothing.
+    <div className="modal-overlay">
       <div
         className={`modal ${wide ? "modal-wide" : ""}`}
         role="dialog"
