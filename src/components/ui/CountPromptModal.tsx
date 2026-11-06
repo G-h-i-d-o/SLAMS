@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
 
+type Mode = "none" | "single" | "multi";
+
 type Props = {
   open: boolean;
   title: string;
   question: string;
   singleLabel: string;
   multiLabel: string;
-  /** Current count — used to pre-select the radio and number input. */
+  /** When provided, a third "None" option is shown. */
+  noneLabel?: string;
+  /** Current count. -1 = undecided (first click), 0 = none, 1 = single, N > 1 = multi. */
   initialCount: number;
   maxCount?: number;
   onConfirm: (count: number) => void;
@@ -20,24 +24,41 @@ export default function CountPromptModal({
   question,
   singleLabel,
   multiLabel,
+  noneLabel,
   initialCount,
   maxCount = 20,
   onConfirm,
   onCancel,
 }: Props) {
-  const [mode, setMode] = useState<"single" | "multi">(
-    initialCount > 1 ? "multi" : "single"
-  );
-  const [count, setCount] = useState<number>(initialCount > 1 ? initialCount : 2);
+  const allowNone = !!noneLabel;
+  const [mode, setMode] = useState<Mode>("single");
+  const [count, setCount] = useState<number>(2);
 
   useEffect(() => {
     if (!open) return;
-    setMode(initialCount > 1 ? "multi" : "single");
-    setCount(initialCount > 1 ? initialCount : 2);
-  }, [open, initialCount]);
+    if (initialCount > 1) {
+      setMode("multi");
+      setCount(initialCount);
+    } else if (initialCount === 1) {
+      setMode("single");
+      setCount(2);
+    } else if (initialCount === 0 && allowNone) {
+      setMode("none");
+      setCount(2);
+    } else {
+      // initialCount === -1 (undecided) — default to single if not optional
+      setMode(allowNone ? "single" : "single");
+      setCount(2);
+    }
+  }, [open, initialCount, allowNone]);
 
   function submit() {
-    const finalCount = mode === "single" ? 1 : Math.max(2, Math.min(maxCount, count));
+    const finalCount =
+      mode === "none"
+        ? 0
+        : mode === "single"
+        ? 1
+        : Math.max(2, Math.min(maxCount, count));
     onConfirm(finalCount);
   }
 
@@ -74,7 +95,7 @@ export default function CountPromptModal({
           />
           <div>
             <div className="count-option-title">{singleLabel}</div>
-            <div className="count-option-sub">One entry — the standard workflow</div>
+            <div className="count-option-sub">One entry</div>
           </div>
         </label>
 
@@ -91,10 +112,28 @@ export default function CountPromptModal({
           <div style={{ flex: 1 }}>
             <div className="count-option-title">{multiLabel}</div>
             <div className="count-option-sub">
-              Choose how many — the wizard creates one metric per combination
+              One metric per combination
             </div>
           </div>
         </label>
+
+        {allowNone && (
+          <label
+            className={`count-option ${mode === "none" ? "selected" : ""}`}
+            onClick={() => setMode("none")}
+          >
+            <input
+              type="radio"
+              name="count-mode"
+              checked={mode === "none"}
+              onChange={() => setMode("none")}
+            />
+            <div>
+              <div className="count-option-title">{noneLabel}</div>
+              <div className="count-option-sub">Skip this field entirely</div>
+            </div>
+          </label>
+        )}
       </div>
 
       {mode === "multi" && (

@@ -12,18 +12,30 @@ type Props = {
 };
 
 export default function Step3Product({ form, update, lookups }: Props) {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [svcModalOpen, setSvcModalOpen] = useState(false);
+  const [prodModalOpen, setProdModalOpen] = useState(false);
 
+  // Services — auto-prompt on first arrival (required field)
   useEffect(() => {
     if (form.service_count === 0) {
-      setModalOpen(true);
+      setSvcModalOpen(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const products = lookups.products.filter(
-    (p) => p.is_enabled && (!p.company_id || p.company_id === form.company_id)
-  );
+  const productCount = form.product_count ?? -1;
+  const products = form.products ?? [];
+
+  const productOptions = lookups.products
+    .filter(
+      (p) =>
+        p.is_enabled &&
+        (!p.company_id || p.company_id === form.company_id)
+    )
+    .map((p) => ({
+      value: p.id,
+      label: `${p.tier1} › ${p.tier2 ?? ""} › ${p.tier3 ?? ""} › ${p.product_name}`,
+    }));
 
   const allCategories = Array.from(
     new Set(lookups.services.map((s) => s.category))
@@ -48,7 +60,7 @@ export default function Step3Product({ form, update, lookups }: Props) {
     );
   }
 
-  function applyCount(count: number) {
+  function applyServiceCount(count: number) {
     const current = form.services ?? [];
     const next = resizeArray(current, count, makeEmptyService);
     update({
@@ -72,30 +84,119 @@ export default function Step3Product({ form, update, lookups }: Props) {
     });
   }
 
+  function applyProductCount(count: number) {
+    const current = form.products ?? [];
+    const next =
+      count <= 0
+        ? []
+        : Array.from({ length: count }, (_, i) => current[i] ?? "");
+    update({
+      product_count: count,
+      products: next,
+      product_category_id: next[0] ?? "",
+    });
+  }
+
+  function setProduct(index: number, value: string) {
+    const current = [...(form.products ?? [])];
+    while (current.length < productCount) current.push("");
+    current[index] = value;
+    update({
+      products: current,
+      product_category_id: current[0] ?? "",
+    });
+  }
+
   const services = form.services ?? [];
-  const isSingle = form.service_count === 1;
+  const isSingleService = form.service_count === 1;
+  const isSingleProduct = productCount === 1;
 
   return (
     <>
-      <div className="section-title">Product & Service</div>
+      {/* ---------------- Products ---------------- */}
+      <div className="section-title">Products (optional)</div>
 
-      {/* Product stays single — first row */}
-      <div className="form-grid">
-        <SearchableSelect
-          label="Product (optional)"
-          value={form.product_category_id}
-          onChange={(v) => update({ product_category_id: v })}
-          options={products.map((p) => ({
-            value: p.id,
-            label: `${p.tier1} › ${p.tier2 ?? ""} › ${p.tier3 ?? ""} › ${p.product_name}`,
-          }))}
-          full
-          placeholder="— None (optional) —"
-        />
+      {productCount === -1 ? (
+        <div className="form-grid">
+          <div className="field full">
+            <label>Product</label>
+            <button
+              type="button"
+              className="searchable-select-trigger"
+              onClick={() => setProdModalOpen(true)}
+            >
+              <span className="ss-trigger-label placeholder">
+                — Click to configure product(s) —
+              </span>
+              <svg
+                className="ss-trigger-caret"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="summary-bar">
+            <span className="label">Products:</span>
+            <span className="value">
+              {productCount === 0
+                ? "None"
+                : productCount === 1
+                ? "1"
+                : `${productCount} selected`}
+            </span>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => setProdModalOpen(true)}
+            >
+              Change
+            </button>
+          </div>
+
+          {productCount > 0 && (
+            <div className="form-grid">
+              {Array.from({ length: productCount }).map((_, idx) => (
+                <div className="field full" key={idx}>
+                  {!isSingleProduct && (
+                    <div className="multi-row-head" style={{ marginTop: 0 }}>
+                      <span className="num">{idx + 1}</span>
+                      <span className="label">
+                        Product {idx + 1} of {productCount}
+                      </span>
+                    </div>
+                  )}
+                  <SearchableSelect
+                    label={isSingleProduct ? "Product" : undefined}
+                    value={products[idx] ?? ""}
+                    onChange={(v) => setProduct(idx, v)}
+                    options={productOptions}
+                    full
+                    placeholder="— Select product —"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ---------------- Services ---------------- */}
+      <div className="section-title" style={{ marginTop: 20 }}>
+        Services
       </div>
 
-      {/* Summary bar for services */}
-      <div className="summary-bar" style={{ marginTop: 20 }}>
+      <div className="summary-bar">
         <span className="label">Services:</span>
         <span className="value">
           {form.service_count === 0
@@ -107,13 +208,12 @@ export default function Step3Product({ form, update, lookups }: Props) {
         <button
           type="button"
           className="btn btn-ghost btn-sm"
-          onClick={() => setModalOpen(true)}
+          onClick={() => setSvcModalOpen(true)}
         >
           Change
         </button>
       </div>
 
-      {/* Service rows */}
       {Array.from({ length: form.service_count }).map((_, idx) => {
         const row = services[idx] ?? makeEmptyService();
         const subs = subCategoriesFor(row.category);
@@ -121,7 +221,7 @@ export default function Step3Product({ form, update, lookups }: Props) {
 
         return (
           <div key={idx}>
-            {!isSingle && (
+            {!isSingleService && (
               <div className="multi-row-head">
                 <span className="num">{idx + 1}</span>
                 <span className="label">
@@ -167,20 +267,35 @@ export default function Step3Product({ form, update, lookups }: Props) {
       })}
 
       <CountPromptModal
-        open={modalOpen}
+        open={svcModalOpen}
         title="Services"
         question="Does this metric cover one service, or multiple?"
         singleLabel="Just one service"
         multiLabel="Multiple services"
         initialCount={form.service_count}
         onConfirm={(count) => {
-          applyCount(count);
-          setModalOpen(false);
+          applyServiceCount(count);
+          setSvcModalOpen(false);
         }}
         onCancel={() => {
-          if (form.service_count === 0) applyCount(1);
-          setModalOpen(false);
+          if (form.service_count === 0) applyServiceCount(1);
+          setSvcModalOpen(false);
         }}
+      />
+
+      <CountPromptModal
+        open={prodModalOpen}
+        title="Products"
+        question="Does this metric cover one Product, or multiple?"
+        singleLabel="Just one product"
+        multiLabel="Multiple products"
+        noneLabel="No product (optional)"
+        initialCount={productCount}
+        onConfirm={(count) => {
+          applyProductCount(count);
+          setProdModalOpen(false);
+        }}
+        onCancel={() => setProdModalOpen(false)}
       />
     </>
   );

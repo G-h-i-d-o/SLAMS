@@ -15,16 +15,25 @@ export type MetricWizardForm = {
   document_id: string;
   signed_date: string;
 
+  // Support groups — single (flat) OR multiple (array).
   support_group_id: string;
   support_group_count: number;
   support_groups: string[];
 
+  // Sites — -1 = undecided, 0 = explicitly none, 1 = single, N > 1 = multiple.
   site_id: string;
+  site_count: number;
+  sites: string[];
+
   start_date: string;
   end_date: string;
 
+  // Products — same convention as sites.
   product_category_id: string;
+  product_count: number;
+  products: string[];
 
+  // Services — single OR multiple.
   service_category: string;
   service_sub_category: string;
   service_id: string;
@@ -67,10 +76,15 @@ export const EMPTY_WIZARD_FORM: MetricWizardForm = {
   support_groups: [],
 
   site_id: "",
+  site_count: -1,
+  sites: [],
+
   start_date: "",
   end_date: "",
 
   product_category_id: "",
+  product_count: -1,
+  products: [],
 
   service_category: "",
   service_sub_category: "",
@@ -131,6 +145,18 @@ export function resizeArray<T>(
     { length: targetLength },
     (_, i) => current[i] ?? makeDefault()
   );
+}
+
+/** How many values this dimension contributes to the cross-product. */
+export function multiplierFor(items: string[] | undefined): number {
+  const count = (items ?? []).filter(Boolean).length;
+  return count > 0 ? count : 1;
+}
+
+/** The list of items to iterate over — falls back to one blank if empty. */
+export function iterableFor(items: string[] | undefined): string[] {
+  const list = (items ?? []).filter(Boolean);
+  return list.length > 0 ? list : [""];
 }
 
 export type MetricFull = {

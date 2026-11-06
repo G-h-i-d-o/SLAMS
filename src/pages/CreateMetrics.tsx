@@ -15,6 +15,7 @@ import { useToast } from "../contexts/ToastContext";
 import { createMetric } from "../lib/api/createMetric";
 import {
   isValidMttrResolve,
+  iterableFor,
   type MetricWizardForm,
   type ServiceSelection,
 } from "../types/metrics";
@@ -41,11 +42,36 @@ function validateStep(step: number, f: MetricWizardForm): string | null {
           : `Support Group ${i + 1} is required`;
       }
     }
+
+    // Site validation — optional, but every row must be filled if chosen
+    const siteCount = f.site_count ?? -1;
+    if (siteCount > 0) {
+      for (let i = 0; i < siteCount; i++) {
+        if (!f.sites[i]) {
+          return siteCount === 1
+            ? "Please select a site (or set Sites to None)"
+            : `Site ${i + 1} is required (or set Sites to None)`;
+        }
+      }
+    }
+
     if (!f.start_date) return "Start Date is required";
     if (!f.end_date) return "End Date is required";
   }
 
   if (step === 3) {
+    // Product validation — optional, but every row must be filled if chosen
+    const productCount = f.product_count ?? -1;
+    if (productCount > 0) {
+      for (let i = 0; i < productCount; i++) {
+        if (!f.products[i]) {
+          return productCount === 1
+            ? "Please select a product (or set Products to None)"
+            : `Product ${i + 1} is required (or set Products to None)`;
+        }
+      }
+    }
+
     if (f.service_count < 1) {
       return "Please choose how many services you need";
     }
@@ -104,29 +130,41 @@ function validateStep(step: number, f: MetricWizardForm): string | null {
 type Combination = {
   supportGroupId: string;
   service: ServiceSelection;
+  site: string;
+  product: string;
   index: number;
 };
 
 function buildCombinations(f: MetricWizardForm): Combination[] {
   const groups = (f.support_groups ?? []).filter(Boolean);
   const services = (f.services ?? []).filter((s) => s.service_id);
+  const sites = iterableFor(f.sites);
+  const products = iterableFor(f.products);
   if (!groups.length || !services.length) return [];
   const combos: Combination[] = [];
   let idx = 0;
-  for (const g of groups) {
-    for (const s of services) {
-      combos.push({ supportGroupId: g, service: s, index: idx++ });
+  for (const sg of groups) {
+    for (const svc of services) {
+      for (const site of sites) {
+        for (const product of products) {
+          combos.push({
+            supportGroupId: sg,
+            service: svc,
+            site,
+            product,
+            index: idx++,
+          });
+        }
+      }
     }
   }
   return combos;
 }
 
 function newBatchId(): string {
-  // crypto.randomUUID is available in all modern browsers
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
-  // fallback
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
@@ -182,8 +220,7 @@ export default function CreateMetrics() {
 
     setSubmitting(true);
 
-    // All metrics from one submit share a batch_id — even the single-metric case,
-    // which keeps the export logic uniform.
+    // All metrics from one submit share a batch_id when there is more than one.
     const batchId = combos.length > 1 ? newBatchId() : null;
 
     const createdIds: string[] = [];
@@ -196,6 +233,8 @@ export default function CreateMetrics() {
         service_category: combo.service.category,
         service_sub_category: combo.service.sub_category,
         service_id: combo.service.service_id,
+        site_id: combo.site,
+        product_category_id: combo.product,
       };
 
       try {
@@ -207,6 +246,8 @@ export default function CreateMetrics() {
             document_id: variant.document_id,
             support_group_id: combo.supportGroupId,
             service_id: combo.service.service_id,
+            site_id: combo.site || "(none)",
+            product_category_id: combo.product || "(none)",
             id,
           }
         );
@@ -219,6 +260,8 @@ export default function CreateMetrics() {
             document_id: variant.document_id,
             support_group_id: combo.supportGroupId,
             service_id: combo.service.service_id,
+            site_id: combo.site || "(none)",
+            product_category_id: combo.product || "(none)",
             error: msg,
           }
         );

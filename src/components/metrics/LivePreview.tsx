@@ -1,4 +1,5 @@
 import type { MetricWizardForm } from "../../types/metrics";
+import { multiplierFor } from "../../types/metrics";
 import type { WizardLookups } from "../../hooks/useWizardLookups";
 
 type Props = {
@@ -10,15 +11,36 @@ type Props = {
 export default function LivePreview({ form, lookups, step }: Props) {
   const companyName =
     lookups.companies.find((c) => c.id === form.company_id)?.name ?? "";
-  const product = lookups.products.find(
-    (p) => p.id === form.product_category_id
-  );
-  const site = lookups.sites.find((s) => s.id === form.site_id);
   const cluster = lookups.clusters.find((c) => c.id === form.cluster_id);
 
   const sgCount = (form.support_groups ?? []).filter(Boolean).length;
   const svcCount = (form.services ?? []).filter((s) => s.service_id).length;
-  const totalMetrics = Math.max(1, sgCount) * Math.max(1, svcCount);
+  const siteCount = (form.sites ?? []).filter(Boolean).length;
+  const prodCount = (form.products ?? []).filter(Boolean).length;
+
+  const totalMetrics =
+    Math.max(1, sgCount) *
+    Math.max(1, svcCount) *
+    multiplierFor(form.sites) *
+    multiplierFor(form.products);
+
+  const singleGroupName =
+    sgCount === 1
+      ? lookups.supportGroups.find((g) => g.id === form.support_groups[0])?.name
+      : null;
+  const singleServiceName =
+    svcCount === 1
+      ? lookups.services.find((s) => s.id === form.services[0]?.service_id)
+          ?.component
+      : null;
+  const singleSiteName =
+    siteCount === 1
+      ? lookups.sites.find((s) => s.id === form.sites[0])?.name
+      : null;
+  const singleProductName =
+    prodCount === 1
+      ? lookups.products.find((p) => p.id === form.products[0])?.product_name
+      : null;
 
   return (
     <div>
@@ -38,15 +60,22 @@ export default function LivePreview({ form, lookups, step }: Props) {
 
         <div className="pc-chips">
           {form.action && <span className="pc-chip">{form.action}</span>}
-          {form.tiered_type && <span className="pc-chip">{form.tiered_type}</span>}
+          {form.tiered_type && (
+            <span className="pc-chip">{form.tiered_type}</span>
+          )}
           {form.rollup_performance && (
             <span className="pc-chip">{form.rollup_performance}% roll-up</span>
           )}
-          {form.mttr_mode && <span className="pc-chip">MTTR: {form.mttr_mode}</span>}
+          {form.mttr_mode && (
+            <span className="pc-chip">MTTR: {form.mttr_mode}</span>
+          )}
           {totalMetrics > 1 && (
             <span
               className="pc-chip"
-              style={{ background: "rgba(251,191,36,.22)", borderColor: "rgba(251,191,36,.4)" }}
+              style={{
+                background: "rgba(251,191,36,.22)",
+                borderColor: "rgba(251,191,36,.4)",
+              }}
             >
               × {totalMetrics} metrics
             </span>
@@ -68,18 +97,29 @@ export default function LivePreview({ form, lookups, step }: Props) {
               {sgCount === 0
                 ? "—"
                 : sgCount === 1
-                ? lookups.supportGroups.find((g) => g.id === form.support_groups[0])
-                    ?.name ?? "1 selected"
+                ? singleGroupName ?? "1 selected"
                 : `${sgCount} selected`}
             </span>
           </div>
           <div className="pc-row">
-            <span>Site</span>
-            <span>{site?.name ?? "—"}</span>
+            <span>Sites</span>
+            <span>
+              {siteCount === 0
+                ? "None"
+                : siteCount === 1
+                ? singleSiteName ?? "1 selected"
+                : `${siteCount} selected`}
+            </span>
           </div>
           <div className="pc-row">
-            <span>Product</span>
-            <span>{product?.product_name ?? "—"}</span>
+            <span>Products</span>
+            <span>
+              {prodCount === 0
+                ? "None"
+                : prodCount === 1
+                ? singleProductName ?? "1 selected"
+                : `${prodCount} selected`}
+            </span>
           </div>
           <div className="pc-row">
             <span>Services</span>
@@ -87,8 +127,7 @@ export default function LivePreview({ form, lookups, step }: Props) {
               {svcCount === 0
                 ? "—"
                 : svcCount === 1
-                ? lookups.services.find((s) => s.id === form.services[0]?.service_id)
-                    ?.component ?? "1 selected"
+                ? singleServiceName ?? "1 selected"
                 : `${svcCount} selected`}
             </span>
           </div>

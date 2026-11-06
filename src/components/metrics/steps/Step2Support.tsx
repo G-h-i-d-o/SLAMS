@@ -12,39 +12,45 @@ type Props = {
 };
 
 export default function Step2Support({ form, update, lookups }: Props) {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [sgModalOpen, setSgModalOpen] = useState(false);
+  const [siteModalOpen, setSiteModalOpen] = useState(false);
 
-  // Open the count modal automatically on first arrival
+  // Support Groups — auto-prompt on first arrival (required field)
   useEffect(() => {
     if (form.support_group_count === 0) {
-      setModalOpen(true);
+      setSgModalOpen(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const sites = lookups.sites.filter(
-    (s) => s.is_enabled && (!form.company_id || s.company_id === form.company_id)
-  );
+  const siteCount = form.site_count ?? -1;
+  const sites = form.sites ?? [];
 
-  function supportGroupOptions() {
-    return lookups.supportGroups.map((g) => {
-      const org = lookups.supportOrganizations.find(
-        (o) => o.id === g.support_organization_id
-      );
-      const sgc = org
-        ? lookups.supportGroupCompanies.find(
-            (c) => c.id === org.support_group_company_id
-          )
-        : null;
-      const path = [sgc?.name, org?.name].filter(Boolean).join(" › ");
-      return {
-        value: g.id,
-        label: path ? `${path} › ${g.name}` : g.name,
-      };
-    });
-  }
+  const siteOptions = lookups.sites
+    .filter(
+      (s) =>
+        s.is_enabled &&
+        (!form.company_id || s.company_id === form.company_id)
+    )
+    .map((s) => ({ value: s.id, label: s.name }));
 
-  function applyCount(count: number) {
+  const groupOptions = lookups.supportGroups.map((g) => {
+    const org = lookups.supportOrganizations.find(
+      (o) => o.id === g.support_organization_id
+    );
+    const sgc = org
+      ? lookups.supportGroupCompanies.find(
+          (c) => c.id === org.support_group_company_id
+        )
+      : null;
+    const path = [sgc?.name, org?.name].filter(Boolean).join(" › ");
+    return {
+      value: g.id,
+      label: path ? `${path} › ${g.name}` : g.name,
+    };
+  });
+
+  function applyGroupCount(count: number) {
     const current = form.support_groups ?? [];
     const next = Array.from({ length: count }, (_, i) => current[i] ?? "");
     update({
@@ -60,19 +66,42 @@ export default function Step2Support({ form, update, lookups }: Props) {
     current[index] = value;
     update({
       support_groups: current,
-      // Mirror the first entry into the flat field for backwards compat
       support_group_id: current[0] ?? "",
     });
   }
 
-  const groups = form.support_groups ?? [];
-  const isSingle = form.support_group_count === 1;
+  function applySiteCount(count: number) {
+    const current = form.sites ?? [];
+    const next =
+      count <= 0
+        ? []
+        : Array.from({ length: count }, (_, i) => current[i] ?? "");
+    update({
+      site_count: count,
+      sites: next,
+      site_id: next[0] ?? "",
+    });
+  }
+
+  function setSite(index: number, value: string) {
+    const current = [...(form.sites ?? [])];
+    while (current.length < siteCount) current.push("");
+    current[index] = value;
+    update({
+      sites: current,
+      site_id: current[0] ?? "",
+    });
+  }
+
+  const groupRows = form.support_groups ?? [];
+  const isSingleGroup = form.support_group_count === 1;
+  const isSingleSite = siteCount === 1;
 
   return (
     <>
-      <div className="section-title">Support & Site</div>
+      {/* ---------------- Support Groups ---------------- */}
+      <div className="section-title">Support Groups</div>
 
-      {/* Summary bar */}
       <div className="summary-bar">
         <span className="label">Support Groups:</span>
         <span className="value">
@@ -85,17 +114,16 @@ export default function Step2Support({ form, update, lookups }: Props) {
         <button
           type="button"
           className="btn btn-ghost btn-sm"
-          onClick={() => setModalOpen(true)}
+          onClick={() => setSgModalOpen(true)}
         >
           Change
         </button>
       </div>
 
-      {/* Support group rows */}
       <div className="form-grid">
         {Array.from({ length: form.support_group_count }).map((_, idx) => (
           <div className="field full" key={idx}>
-            {!isSingle && (
+            {!isSingleGroup && (
               <div className="multi-row-head" style={{ marginTop: 0 }}>
                 <span className="num">{idx + 1}</span>
                 <span className="label">
@@ -104,10 +132,10 @@ export default function Step2Support({ form, update, lookups }: Props) {
               </div>
             )}
             <SearchableSelect
-              label={isSingle ? "Support Group" : undefined}
-              value={groups[idx] ?? ""}
+              label={isSingleGroup ? "Support Group" : undefined}
+              value={groupRows[idx] ?? ""}
               onChange={(v) => setGroup(idx, v)}
-              options={supportGroupOptions()}
+              options={groupOptions}
               required
               full
               placeholder="— Select support group —"
@@ -116,18 +144,92 @@ export default function Step2Support({ form, update, lookups }: Props) {
         ))}
       </div>
 
-      {/* Site and dates */}
+      {/* ---------------- Sites ---------------- */}
       <div className="section-title" style={{ marginTop: 20 }}>
-        Site & Dates
+        Sites (optional)
+      </div>
+
+      {siteCount === -1 ? (
+        // Not yet configured — clicking triggers the count prompt
+        <div className="form-grid">
+          <div className="field full">
+            <label>Site</label>
+            <button
+              type="button"
+              className="searchable-select-trigger"
+              onClick={() => setSiteModalOpen(true)}
+            >
+              <span className="ss-trigger-label placeholder">
+                — Click to configure site(s) —
+              </span>
+              <svg
+                className="ss-trigger-caret"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="summary-bar">
+            <span className="label">Sites:</span>
+            <span className="value">
+              {siteCount === 0
+                ? "None"
+                : siteCount === 1
+                ? "1"
+                : `${siteCount} selected`}
+            </span>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => setSiteModalOpen(true)}
+            >
+              Change
+            </button>
+          </div>
+
+          {siteCount > 0 && (
+            <div className="form-grid">
+              {Array.from({ length: siteCount }).map((_, idx) => (
+                <div className="field full" key={idx}>
+                  {!isSingleSite && (
+                    <div className="multi-row-head" style={{ marginTop: 0 }}>
+                      <span className="num">{idx + 1}</span>
+                      <span className="label">
+                        Site {idx + 1} of {siteCount}
+                      </span>
+                    </div>
+                  )}
+                  <SearchableSelect
+                    label={isSingleSite ? "Site" : undefined}
+                    value={sites[idx] ?? ""}
+                    onChange={(v) => setSite(idx, v)}
+                    options={siteOptions}
+                    full
+                    placeholder="— Select site —"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ---------------- Dates ---------------- */}
+      <div className="section-title" style={{ marginTop: 20 }}>
+        Dates
       </div>
       <div className="form-grid">
-        <SearchableSelect
-          label="Site (optional — exclusive to company)"
-          value={form.site_id}
-          onChange={(v) => update({ site_id: v })}
-          options={sites.map((s) => ({ value: s.id, label: s.name }))}
-          placeholder="— None —"
-        />
         <FormField label="Start Date" required>
           <input
             type="date"
@@ -145,21 +247,35 @@ export default function Step2Support({ form, update, lookups }: Props) {
       </div>
 
       <CountPromptModal
-        open={modalOpen}
+        open={sgModalOpen}
         title="Support Groups"
         question="Does this metric cover one support group, or multiple?"
         singleLabel="Just one support group"
         multiLabel="Multiple support groups"
         initialCount={form.support_group_count}
         onConfirm={(count) => {
-          applyCount(count);
-          setModalOpen(false);
+          applyGroupCount(count);
+          setSgModalOpen(false);
         }}
         onCancel={() => {
-          // If we haven't decided yet, default to 1 so the wizard isn't blocked
-          if (form.support_group_count === 0) applyCount(1);
-          setModalOpen(false);
+          if (form.support_group_count === 0) applyGroupCount(1);
+          setSgModalOpen(false);
         }}
+      />
+
+      <CountPromptModal
+        open={siteModalOpen}
+        title="Sites"
+        question="Does this metric cover one Site, or multiple?"
+        singleLabel="Just one site"
+        multiLabel="Multiple sites"
+        noneLabel="No site (optional)"
+        initialCount={siteCount}
+        onConfirm={(count) => {
+          applySiteCount(count);
+          setSiteModalOpen(false);
+        }}
+        onCancel={() => setSiteModalOpen(false)}
       />
     </>
   );

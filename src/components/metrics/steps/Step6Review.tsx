@@ -1,4 +1,5 @@
 import type { MetricWizardForm } from "../../../types/metrics";
+import { multiplierFor } from "../../../types/metrics";
 import type { WizardLookups } from "../../../hooks/useWizardLookups";
 
 type Props = {
@@ -14,10 +15,6 @@ function resolveDisplay(v: string): string {
 
 export default function Step6Review({ form, lookups }: Props) {
   const company = lookups.companies.find((c) => c.id === form.company_id);
-  const site = lookups.sites.find((s) => s.id === form.site_id);
-  const product = lookups.products.find(
-    (p) => p.id === form.product_category_id
-  );
   const cluster = lookups.clusters.find((c) => c.id === form.cluster_id);
   const bh = (id: string) =>
     lookups.businessHours.find((b) => b.id === id)?.label ?? "—";
@@ -27,8 +24,8 @@ export default function Step6Review({ form, lookups }: Props) {
   const showResolve =
     form.mttr_mode === "resolve" || form.mttr_mode === "both";
 
-  // Resolve support group display paths
   const groupRows = (form.support_groups ?? [])
+    .filter(Boolean)
     .map((id, idx) => {
       const g = lookups.supportGroups.find((x) => x.id === id);
       if (!g) return null;
@@ -45,8 +42,29 @@ export default function Step6Review({ form, lookups }: Props) {
     })
     .filter(Boolean) as { idx: number; path: string }[];
 
-  // Resolve service rows
+  const siteRows = (form.sites ?? [])
+    .filter(Boolean)
+    .map((id, idx) => {
+      const s = lookups.sites.find((x) => x.id === id);
+      return s ? { idx, name: s.name } : null;
+    })
+    .filter(Boolean) as { idx: number; name: string }[];
+
+  const productRows = (form.products ?? [])
+    .filter(Boolean)
+    .map((id, idx) => {
+      const p = lookups.products.find((x) => x.id === id);
+      if (!p) return null;
+      return {
+        idx,
+        name: p.product_name,
+        path: `${p.tier1} › ${p.tier2 ?? ""} › ${p.tier3 ?? ""}`,
+      };
+    })
+    .filter(Boolean) as { idx: number; name: string; path: string }[];
+
   const serviceRows = (form.services ?? [])
+    .filter((s) => s.service_id)
     .map((s, idx) => {
       const svc = lookups.services.find((x) => x.id === s.service_id);
       if (!svc) return null;
@@ -64,7 +82,13 @@ export default function Step6Review({ form, lookups }: Props) {
     component: string;
   }[];
 
-  const totalMetrics = Math.max(1, groupRows.length) * Math.max(1, serviceRows.length);
+  // Cross-product total
+  const sgMultiplier = Math.max(1, groupRows.length);
+  const svcMultiplier = Math.max(1, serviceRows.length);
+  const siteMultiplier = multiplierFor(form.sites);
+  const prodMultiplier = multiplierFor(form.products);
+  const totalMetrics =
+    sgMultiplier * svcMultiplier * siteMultiplier * prodMultiplier;
 
   return (
     <>
@@ -80,14 +104,12 @@ export default function Step6Review({ form, lookups }: Props) {
       </div>
 
       <div className="review-block">
-        <h4>
-          Support Groups ({groupRows.length})
-        </h4>
-        <div style={{ display: "grid", gap: 6 }}>
-          {groupRows.length === 0 ? (
-            <div className="cell-sub">None selected</div>
-          ) : (
-            groupRows.map((g) => (
+        <h4>Support Groups ({groupRows.length})</h4>
+        {groupRows.length === 0 ? (
+          <div className="cell-sub">None selected</div>
+        ) : (
+          <div style={{ display: "grid", gap: 6 }}>
+            {groupRows.map((g) => (
               <div
                 key={g.idx}
                 style={{
@@ -103,40 +125,89 @@ export default function Step6Review({ form, lookups }: Props) {
                 </strong>
                 {g.path}
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="review-block">
-        <h4>Site & Dates</h4>
+        <h4>
+          Sites ({siteRows.length > 0 ? siteRows.length : "None"})
+        </h4>
+        {siteRows.length === 0 ? (
+          <div className="cell-sub">No site — site stays blank on all metrics</div>
+        ) : (
+          <div style={{ display: "grid", gap: 6 }}>
+            {siteRows.map((s) => (
+              <div
+                key={s.idx}
+                style={{
+                  fontSize: 12.5,
+                  padding: "6px 10px",
+                  background: "#fafbfd",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                }}
+              >
+                <strong style={{ color: "var(--primary)", marginRight: 8 }}>
+                  #{s.idx + 1}
+                </strong>
+                {s.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="review-block">
+        <h4>Dates</h4>
         <div className="review-grid">
-          <div><span>Site</span><span>{site?.name ?? "—"}</span></div>
           <div><span>Start</span><span>{form.start_date || "—"}</span></div>
           <div><span>End</span><span>{form.end_date || "—"}</span></div>
         </div>
       </div>
 
       <div className="review-block">
-        <h4>Product</h4>
-        <div className="review-grid">
-          <div><span>Product</span><span>{product?.product_name ?? "—"}</span></div>
-          <div>
-            <span>Tier</span>
-            <span>
-              {product ? `${product.tier1} › ${product.tier2 ?? ""}` : "—"}
-            </span>
+        <h4>
+          Products ({productRows.length > 0 ? productRows.length : "None"})
+        </h4>
+        {productRows.length === 0 ? (
+          <div className="cell-sub">
+            No product — product stays blank on all metrics
           </div>
-        </div>
+        ) : (
+          <div style={{ display: "grid", gap: 6 }}>
+            {productRows.map((p) => (
+              <div
+                key={p.idx}
+                style={{
+                  fontSize: 12.5,
+                  padding: "6px 10px",
+                  background: "#fafbfd",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                }}
+              >
+                <strong style={{ color: "var(--primary)", marginRight: 8 }}>
+                  #{p.idx + 1}
+                </strong>
+                {p.name}
+                <span className="cell-sub" style={{ marginLeft: 8 }}>
+                  · {p.path}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="review-block">
         <h4>Services ({serviceRows.length})</h4>
-        <div style={{ display: "grid", gap: 6 }}>
-          {serviceRows.length === 0 ? (
-            <div className="cell-sub">None selected</div>
-          ) : (
-            serviceRows.map((s) => (
+        {serviceRows.length === 0 ? (
+          <div className="cell-sub">None selected</div>
+        ) : (
+          <div style={{ display: "grid", gap: 6 }}>
+            {serviceRows.map((s) => (
               <div
                 key={s.idx}
                 style={{
@@ -152,9 +223,9 @@ export default function Step6Review({ form, lookups }: Props) {
                 </strong>
                 {s.category} › {s.sub ?? ""} › {s.component}
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="review-block">
@@ -201,7 +272,6 @@ export default function Step6Review({ form, lookups }: Props) {
         </div>
       </div>
 
-      {/* Multi-metric warning */}
       {totalMetrics > 1 && (
         <div
           style={{
@@ -211,15 +281,19 @@ export default function Step6Review({ form, lookups }: Props) {
             padding: "12px 16px",
             borderRadius: 10,
             fontSize: 12.5,
-            lineHeight: 1.6,
+            lineHeight: 1.7,
           }}
         >
           <strong>Heads up:</strong> this will create{" "}
-          <strong>{totalMetrics} metrics</strong> — {groupRows.length} support
-          group{groupRows.length === 1 ? "" : "s"} ×{" "}
-          {serviceRows.length} service{serviceRows.length === 1 ? "" : "s"}.
-          Document IDs will be suffixed <code>_1</code>, <code>_2</code>, … to
-          keep them unique.
+          <strong>{totalMetrics} metrics</strong>{" "}
+          <span style={{ fontSize: 11.5 }}>
+            ({sgMultiplier} group{sgMultiplier === 1 ? "" : "s"} ×{" "}
+            {svcMultiplier} service{svcMultiplier === 1 ? "" : "s"} ×{" "}
+            {siteMultiplier} site{siteMultiplier === 1 ? "" : "s"} ×{" "}
+            {prodMultiplier} product{prodMultiplier === 1 ? "" : "s"})
+          </span>
+          . They'll share the same Document ID, show as one row in History, and
+          export as one Excel sheet.
         </div>
       )}
     </>
